@@ -39,6 +39,20 @@ namespace boost { namespace simd { namespace ext
                              );
     }
   };
+
+  BOOST_DISPATCH_OVERLOAD ( group_
+                          , (typename A0)
+                          , bs::sse4_1_
+                          , bs::pack_<bd::int32_<A0>, bs::sse_>
+                          , bs::pack_<bd::int32_<A0>, bs::sse_>
+                         )
+  {
+    BOOST_FORCEINLINE bd::downgrade_t<A0>
+    operator()(const A0 & a0, const A0 & a1 ) const BOOST_NOEXCEPT
+    {
+      return _mm_packus_epi32( a0, a1);
+    }
+  };
 } } }
 
 #endif

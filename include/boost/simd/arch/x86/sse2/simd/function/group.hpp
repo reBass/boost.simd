@@ -31,6 +31,21 @@ namespace boost { namespace simd { namespace ext
         return _mm_movelh_ps(_mm_cvtpd_ps(a0), _mm_cvtpd_ps(a1));
       }
    };
+
+   BOOST_DISPATCH_OVERLOAD( group_
+                          , (typename A0)
+                          , bs::sse2_
+                          , bs::pack_<bd::int16_<A0>, sse_>
+                          , bs::pack_<bd::int16_<A0>, sse_>
+                          )
+   {
+      using result = bd::downgrade_t<A0>;
+
+      BOOST_FORCEINLINE result operator()(const A0& a0, const A0& a1) const BOOST_NOEXCEPT
+      {
+        return _mm_packus_epi16(a0, a1);
+      }
+   };
 } } }
 
 #endif
