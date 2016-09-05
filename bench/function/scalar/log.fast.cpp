@@ -16,5 +16,5 @@ DEFINE_SCALAR_BENCH(scalar_log, bs::fast_(bs::log));
 
 DEFINE_BENCH_MAIN()
 {
-  nsb::for_each<scalar_log, float/*NS_BENCH_IEEE_TYPES*/>(0, 1000);
+  nsb::for_each<scalar_log, NS_BENCH_IEEE_TYPES>(0, 1000);
 }

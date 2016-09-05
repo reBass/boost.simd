@@ -30,19 +30,16 @@ void test(Env& $)
   p_t aa1(&a1[0], &a1[0]+N);
   p_t bb (&b[0], &b[0]+N);
   p_t cc (&c[0], &c[0]+N);
-  std::cout << aa1 << std::endl;
-  std::cout << bb  << std::endl;
-  std::cout << bs::fast_(bs::log)(aa1)<< std::endl;
-  std::cout <<           bs::log (aa1)<< std::endl;
   STF_IEEE_EQUAL(bs::fast_(bs::log)(aa1), bb);
 }
 
-STF_CASE_TPL("Check log on pack" , (float))//STF_IEEE_TYPES)
+STF_CASE_TPL("Check log on pack" , STF_IEEE_TYPES)
 {
   namespace bs = boost::simd;
   using p_t = bs::pack<T>;
   static const std::size_t N = bs::cardinal_of<p_t>::value;
   test<T, N>($);
-//   test<T, N/2>($);
-//   test<T, N*2>($);
+  test<T, N/2>($);
+  test<T, N*2>($);
+  test<T, N*4>($);
 }

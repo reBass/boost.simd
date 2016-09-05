@@ -20,7 +20,7 @@
 #include <boost/simd/constant/log_2.hpp>
 #include <boost/simd/constant/two.hpp>
 
-STF_CASE_TPL (" log",  (float))//STF_IEEE_TYPES)
+STF_CASE_TPL (" log",  STF_IEEE_TYPES)
 {
   namespace bs = boost::simd;
   namespace bd = boost::dispatch;
