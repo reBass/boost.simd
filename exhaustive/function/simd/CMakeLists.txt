@@ -18,6 +18,7 @@ set(SOURCES
   expm1.cpp
   fast_acos.cpp
   log.cpp
+  log.fast.cpp
   log1p.cpp
   log10.cpp
   log2.cpp

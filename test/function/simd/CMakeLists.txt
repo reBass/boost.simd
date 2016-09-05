@@ -216,6 +216,7 @@ is_unord.cpp
 ldexp.cpp
 lo.cpp
 log.cpp
+log.fast.cpp
 log10.cpp
 log1p.cpp
 log2.cpp

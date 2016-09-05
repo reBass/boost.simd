@@ -8,6 +8,7 @@
 
 set(SOURCES
   log.cpp
+  log.fast.cpp
     )
 
 make_exhaustive("function.scalar" ${SOURCES})
