@@ -118,6 +118,7 @@ erfc.cpp
 erfcx.cpp
 exp.cpp
 exp2.cpp
+exp10.cpp
 expm1.cpp
 exprecneg.cpp
 exprecnegc.cpp

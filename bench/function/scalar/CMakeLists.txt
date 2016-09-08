@@ -95,11 +95,13 @@ set(SOURCES
     exp2.cpp
     exp.cpp
     exp.std.cpp
+    exp.musl.cpp
     expm1.cpp
     exprecnegc.cpp
     exprecneg.cpp
     expx2.cpp
     exp10.cpp
+    exp10.musl.cpp
     fast.frexp.cpp
     fast.hypot.cpp
     fast.rec.cpp

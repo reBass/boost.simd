@@ -271,8 +271,11 @@ set ( SOURCES
 #exponential
    cbrt.cpp
    exp.cpp
+   exp.musl.cpp
    exp10.cpp
+   exp10.musl.cpp
    exp2.cpp
+   exp2.musl.cpp
    expm1.cpp
    exprecneg.cpp
    exprecnegc.cpp

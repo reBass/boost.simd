@@ -20,28 +20,28 @@
 #include <boost/simd/constant/ratio.hpp>
 #include <boost/simd/function/is_flint.hpp>
 
-STF_CASE_TPL ("exp10",  STF_IEEE_TYPES)
+STF_CASE_TPL ("bs::musl_(exp10)",  (float))//STF_IEEE_TYPES)
 {
   namespace bs = boost::simd;
   using bs::exp10;
-  using r_t = decltype(exp10(T()));
+  using r_t = decltype(bs::musl_(exp10)(T()));
 
   // return type conformity test
   STF_TYPE_IS(r_t, T);
 
   // specific values tests
 #ifndef BOOST_SIMD_NO_INVALIDS
-  STF_ULP_EQUAL(exp10(bs::Inf<T>()), bs::Inf<r_t>(), 0);
-  STF_ULP_EQUAL(exp10(bs::Minf<T>()), bs::Zero<r_t>(), 0);
-  STF_ULP_EQUAL(exp10(bs::Nan<T>()), bs::Nan<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(exp10)(bs::Inf<T>()), bs::Inf<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(exp10)(bs::Minf<T>()), bs::Zero<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(exp10)(bs::Nan<T>()), bs::Nan<r_t>(), 0);
 #endif
-  STF_ULP_EQUAL(exp10(bs::Mone<T>()), (bs::Ratio<r_t, 1, 10>()), 0.75);
-  STF_ULP_EQUAL(exp10(bs::One<T>()), bs::Ten<r_t>(), 0.75);
-  STF_ULP_EQUAL(exp10(bs::Zero<T>()), bs::One<r_t>(), 0.75);
+  STF_ULP_EQUAL(bs::musl_(exp10)(bs::Mone<T>()), (bs::Ratio<r_t, 1, 10>()), 0.75);
+  STF_ULP_EQUAL(bs::musl_(exp10)(bs::One<T>()), bs::Ten<r_t>(), 0.75);
+  STF_ULP_EQUAL(bs::musl_(exp10)(bs::Zero<T>()), bs::One<r_t>(), 0.75);
 
   for(int i=0; i < 30 ; i++)
   {
-    STF_EXPECT(bs::is_flint(exp10(T(i))));
+    STF_EXPECT(bs::is_flint(bs::musl_(exp10)(T(i))));
   }
 }
 

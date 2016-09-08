@@ -31,6 +31,22 @@ namespace boost { namespace simd { namespace ext
       return detail::exponential<A0,bs::tag::exp_,tag::simd_type>::expa(a0);
     }
   };
+
+  BOOST_DISPATCH_OVERLOAD_IF ( exp_
+                             , (typename A0, typename X)
+                             , (detail::is_native<X>)
+                             , bd::cpu_
+                             , bs::musl_tag
+                             , bs::pack_< bd::floating_<A0>, X>
+                          )
+  {
+    BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 a0) const BOOST_NOEXCEPT
+    {
+      using sA0 = bd::scalar_of_t<A0>;
+      return detail::exponential<A0,bs::tag::exp_,tag::simd_type,sA0,musl_tag>::expa(a0);
+    }
+  };
+
 } } }
 
 #endif

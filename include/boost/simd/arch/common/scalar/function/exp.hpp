@@ -14,8 +14,13 @@
 
 #include <boost/simd/detail/dispatch/function/overload.hpp>
 #include <boost/simd/arch/common/detail/scalar/exponential.hpp>
-#include <boost/simd/arch/common/detail/tags.hpp>
+#include <boost/simd/arch/common/detail/generic/expo_musl_approx.hpp>
 #include <boost/simd/function/std.hpp>
+#include <boost/simd/function/musl.hpp>
+#include <boost/simd/function/scalar/fma.hpp>
+#include <boost/simd/function/scalar/fnms.hpp>
+#include <boost/simd/function/scalar/sqr.hpp>
+#include <boost/simd/function/scalar/tofloat.hpp>
 #include <boost/config.hpp>
 #include <cmath>
 
@@ -35,6 +40,7 @@ namespace boost { namespace simd { namespace ext
       return detail::exponential<A0,bs::tag::exp_,tag::not_simd_type>::expa(a0);
     }
   };
+
   BOOST_DISPATCH_OVERLOAD ( exp_
                           , (typename A0)
                           , bd::cpu_
@@ -45,6 +51,20 @@ namespace boost { namespace simd { namespace ext
     BOOST_FORCEINLINE A0 operator() (const std_tag &, A0 a0) const BOOST_NOEXCEPT
     {
       return std::exp(a0);
+    }
+  };
+
+  BOOST_DISPATCH_OVERLOAD ( exp_
+                          , (typename A0)
+                          , bd::cpu_
+                          , bs::musl_tag
+                          , bd::scalar_< bd::floating_<A0> >
+                          )
+  {
+    BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 a0) const BOOST_NOEXCEPT
+    {
+      using sA0 = bd::scalar_of_t<A0>;
+      return detail::exponential<A0,bs::tag::exp_,tag::not_simd_type,sA0,musl_tag>::expa(a0);
     }
   };
 } } }
