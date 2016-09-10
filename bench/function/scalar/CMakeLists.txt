@@ -206,8 +206,9 @@ set(SOURCES
     log10.cpp
     log1p.cpp
     log2.cpp
+    log2.musl.cpp
     log.cpp
-    log.fast.cpp
+    log.musl.cpp
     logical_and.cpp
     logical_andnot.cpp
     logical_notand.cpp

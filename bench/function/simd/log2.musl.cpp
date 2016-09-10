@@ -8,13 +8,14 @@
 
 #include <simd_bench.hpp>
 #include <boost/simd/function/simd/log2.hpp>
+#include <boost/simd/pack.hpp>
 
 namespace nsb = ns::bench;
 namespace bs =  boost::simd;
 
-DEFINE_SCALAR_BENCH(scalar_log2, bs::log2);
+DEFINE_SIMD_BENCH(simd_musl_log2, bs::musl_(bs::log2));
 
 DEFINE_BENCH_MAIN()
 {
-  nsb::for_each<scalar_log2, NS_BENCH_IEEE_TYPES>(0, 1000);
+  nsb::for_each<simd_musl_log2, NS_BENCH_IEEE_TYPES>(0, 1000);
 }

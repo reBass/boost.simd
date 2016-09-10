@@ -7,7 +7,7 @@
   (See accompanying file LICENSE.md or copy at http://boost.org/LICENSE_1_0.txt)
 */
 //==================================================================================================
-#include <boost/simd/function/scalar/log.hpp>
+#include <boost/simd/function/scalar/log2.hpp>
 #include <boost/simd/function/std.hpp>
 #include <scalar_test.hpp>
 #include <boost/simd/constant/inf.hpp>
@@ -17,32 +17,28 @@
 #include <boost/simd/constant/mone.hpp>
 #include <boost/simd/constant/zero.hpp>
 #include <boost/simd/constant/mzero.hpp>
-#include <boost/simd/constant/log_2.hpp>
-#include <boost/simd/constant/two.hpp>
 
-STF_CASE_TPL (" log",  STF_IEEE_TYPES)
+STF_CASE_TPL (" bs::musl_(log2)", STF_IEEE_TYPES)
 {
   namespace bs = boost::simd;
   namespace bd = boost::dispatch;
-  using bs::log;
+  using bs::log2;
 
-  using r_t = decltype(bs::fast_(log)(T()));
+  using r_t = decltype(bs::musl_(log2)(T()));
 
   // return type conformity test
   STF_TYPE_IS(r_t, T);
 
   // specific values tests
 #ifndef BOOST_SIMD_NO_INVALIDS
-  STF_ULP_EQUAL(bs::fast_(log)(bs::Inf<T>()), bs::Inf<r_t>(), 0);
-  STF_ULP_EQUAL(bs::fast_(log)(bs::Minf<T>()), bs::Nan<r_t>(), 0);
-  STF_ULP_EQUAL(bs::fast_(log)(bs::Nan<T>()), bs::Nan<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(bs::Inf<T>()), bs::Inf<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(bs::Minf<T>()), bs::Nan<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(bs::Nan<T>()), bs::Nan<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(bs::Mone<T>()), bs::Nan<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(bs::Zero<T>()), bs::Minf<r_t>(), 0);
 #endif
-  STF_ULP_EQUAL(bs::fast_(log)(bs::Mone<T>()), bs::Nan<r_t>(), 0);
-  STF_ULP_EQUAL(bs::fast_(log)(bs::Mzero<T>()), bs::Minf<r_t>(), 0);
-  STF_ULP_EQUAL(bs::fast_(log)(bs::Zero<T>()), bs::Minf<r_t>(), 0);
-  STF_ULP_EQUAL(bs::fast_(log)(bs::One<T>()), bs::Zero<r_t>(), 0);
-  STF_ULP_EQUAL(bs::fast_(log)(bs::Two<T>()), bs::Log_2<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(bs::One<T>()), bs::Zero<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(T(2)), T(1), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(T(8)), T(3), 0);
+  STF_ULP_EQUAL(bs::musl_(log2)(T(64)), T(6), 0);
 }
-
-
-

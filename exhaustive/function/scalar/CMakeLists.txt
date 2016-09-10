@@ -11,7 +11,7 @@ set(SOURCES
   exp.musl.cpp
   exp10.cpp
   log.cpp
-  log.fast.cpp
+  log.musl.cpp
     )
 
 make_exhaustive("function.scalar" ${SOURCES})

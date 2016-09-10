@@ -18,6 +18,8 @@
 #include <boost/config.hpp>
 #include <boost/simd/function/simd/is_lez.hpp>
 #include <boost/simd/function/simd/any.hpp>
+#include <boost/simd/function/musl.hpp>
+#include <boost/simd/function/std.hpp>
 
 namespace boost { namespace simd { namespace ext
 {
@@ -41,11 +43,11 @@ namespace boost { namespace simd { namespace ext
                           , (typename A0, typename X)
                           , (detail::is_native<X>)
                           , bd::cpu_
-                          , bs::fast_tag
+                          , bs::musl_tag
                           , bs::pack_< bd::single_<A0>, X>
                           )
   {
-    BOOST_FORCEINLINE A0 operator() (const fast_tag &, const A0& a0) const BOOST_NOEXCEPT
+    BOOST_FORCEINLINE A0 operator() (const musl_tag &, const A0& a0) const BOOST_NOEXCEPT
     {
       A0 ln2_hi(6.9313812256e-01), /* 0x3f317180 */
         ln2_lo(9.0580006145e-06), /* 0x3717f7d1 */
@@ -59,8 +61,8 @@ namespace boost { namespace simd { namespace ext
       A0 x =  if_nan_else(is_lez(a0), a0);
       iA0 k(0);
       auto isnez = is_nez(a0);
-      auto test = is_less(a0, Smallestposval<A0>())&&isnez;
 #ifndef BOOST_SIMD_NO_DENORMALS
+      auto test = is_less(a0, Smallestposval<A0>())&&isnez;
       if (any(test))
       {
         k = if_minus(test, k, iA0(25));
@@ -95,11 +97,11 @@ namespace boost { namespace simd { namespace ext
                              , (typename A0, typename X)
                              , (detail::is_native<X>)
                              , bd::cpu_
-                             , bs::fast_tag
+                             , bs::musl_tag
                              , bs::pack_< bd::double_<A0>, X>
                              )
   {
-    BOOST_FORCEINLINE A0 operator() (const fast_tag &, const A0& a0) const BOOST_NOEXCEPT
+    BOOST_FORCEINLINE A0 operator() (const musl_tag &, const A0& a0) const BOOST_NOEXCEPT
     {
       static const double
         ln2_hi(6.93147180369123816490e-01),  /* 3fe62e42 fee00000 */
@@ -117,9 +119,9 @@ namespace boost { namespace simd { namespace ext
       uiA0 hx = bitwise_cast<uiA0>(x) >> 32;
       iA0 k(0);
       auto isnez = is_nez(a0);
-      auto test = is_less(a0, Smallestposval<A0>())&&isnez;
 
 #ifndef BOOST_SIMD_NO_DENORMALS
+      auto test = is_less(a0, Smallestposval<A0>())&&isnez;
       if (any(test))
       {
         k = if_minus(test, k, iA0(54));

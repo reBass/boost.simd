@@ -281,10 +281,11 @@ set ( SOURCES
    exprecnegc.cpp
    expx2.cpp
    log.cpp
-   log.fast.cpp
+   log.musl.cpp
    log10.cpp
    log1p.cpp
    log2.cpp
+   log2.musl.cpp
    nthroot.cpp
    pow.cpp
    pow2.cpp

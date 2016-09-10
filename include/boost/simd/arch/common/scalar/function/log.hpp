@@ -14,6 +14,8 @@
 
 #include <boost/simd/arch/common/detail/scalar/logarithm.hpp>
 #include <boost/simd/detail/dispatch/function/overload.hpp>
+#include <boost/simd/function/musl.hpp>
+#include <boost/simd/function/std.hpp>
 #include <boost/assert.hpp>
 #include <boost/config.hpp>
 #include <cmath>
@@ -51,13 +53,13 @@ namespace boost { namespace simd { namespace ext
   BOOST_DISPATCH_OVERLOAD ( log_
                           , (typename A0)
                           , bd::cpu_
-                          , bs::fast_tag
+                          , bs::musl_tag
                           , bd::scalar_< bd::single_<A0> >
                           )
   {
-    BOOST_FORCEINLINE A0 operator() (const fast_tag &, A0 x) const BOOST_NOEXCEPT
+    BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      A0 ln2_hi = 6.9313812256e-01, /* 0x3f317180 */
+      const A0 ln2_hi = 6.9313812256e-01, /* 0x3f317180 */
         ln2_lo = 9.0580006145e-06, /* 0x3717f7d1 */
         /* |(log(1+s)-log(1-s))/s - Lg(s)| < 2**-34.24 (~[-4.95e-11, 4.97e-11]). */
         Lg1 =0.66666662693, /*   0xaaaaaa.0p-24*/
@@ -101,13 +103,13 @@ namespace boost { namespace simd { namespace ext
   BOOST_DISPATCH_OVERLOAD ( log_
                           , (typename A0)
                           , bd::cpu_
-                          , bs::fast_tag
+                          , bs::musl_tag
                           , bd::scalar_< bd::double_<A0> >
                           )
   {
-    BOOST_FORCEINLINE A0 operator() (const fast_tag &, A0 x) const BOOST_NOEXCEPT
+    BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      static const double
+      const A0
         ln2_hi = 6.93147180369123816490e-01,  /* 3fe62e42 fee00000 */
         ln2_lo = 1.90821492927058770002e-10,  /* 3dea39ef 35793c76 */
         Lg1 = 6.666666666666735130e-01,  /* 3FE55555 55555593 */

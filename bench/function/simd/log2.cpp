@@ -17,5 +17,5 @@ DEFINE_SIMD_BENCH(simd_log2, bs::log2);
 
 DEFINE_BENCH_MAIN()
 {
-  nsb::for_each<simd_log2, NS_BENCH_IEEE_TYPES>(-10, 10);
+  nsb::for_each<simd_log2, NS_BENCH_IEEE_TYPES>(0, 1000);
 }

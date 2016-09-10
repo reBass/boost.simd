@@ -25,12 +25,12 @@ void test(Env& $)
   for(std::size_t i = 0; i < N; ++i)
   {
     a1[i] = (i%2) ? T(i) : bs::rec(T(i));
-    b[i] = bs::fast_(bs::log)(a1[i]);
+    b[i] = bs::musl_(bs::log)(a1[i]);
   }
   p_t aa1(&a1[0], &a1[0]+N);
   p_t bb (&b[0], &b[0]+N);
   p_t cc (&c[0], &c[0]+N);
-  STF_IEEE_EQUAL(bs::fast_(bs::log)(aa1), bb);
+  STF_IEEE_EQUAL(bs::musl_(bs::log)(aa1), bb);
 }
 
 STF_CASE_TPL("Check log on pack" , STF_IEEE_TYPES)

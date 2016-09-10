@@ -18,10 +18,11 @@ set(SOURCES
   expm1.cpp
   fast_acos.cpp
   log.cpp
-  log.fast.cpp
+  log.musl.cpp
   log1p.cpp
   log10.cpp
   log2.cpp
+  log2.musl.cpp
   nthroot.cpp
  )
 
