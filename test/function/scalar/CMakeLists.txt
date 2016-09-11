@@ -283,7 +283,9 @@ set ( SOURCES
    log.cpp
    log.musl.cpp
    log10.cpp
+   log10.musl.cpp
    log1p.cpp
+   log1p.musl.cpp
    log2.cpp
    log2.musl.cpp
    nthroot.cpp

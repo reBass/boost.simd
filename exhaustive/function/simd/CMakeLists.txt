@@ -9,8 +9,10 @@
 set(SOURCES
   acos.cpp
   acos.accurate.cpp
+  acosh.cpp
   asin.cpp
   atan.cpp
+  atanh.cpp
   erf.cpp
   exp.cpp
   exp10.cpp
@@ -20,7 +22,9 @@ set(SOURCES
   log.cpp
   log.musl.cpp
   log1p.cpp
+  log1p.musl.cpp
   log10.cpp
+  log10.musl.cpp
   log2.cpp
   log2.musl.cpp
   nthroot.cpp

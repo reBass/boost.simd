@@ -219,7 +219,9 @@ lo.cpp
 log.cpp
 log.musl.cpp
 log10.cpp
+log10.musl.cpp
 log1p.cpp
+log1p.musl.cpp
 log2.cpp
 log2.musl.cpp
 logical_and.cpp

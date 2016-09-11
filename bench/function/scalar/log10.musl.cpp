@@ -7,14 +7,14 @@
 // -------------------------------------------------------------------------------------------------
 
 #include <simd_bench.hpp>
-#include <boost/simd/function/simd/log1p.hpp>
+#include <boost/simd/function/simd/log10.hpp>
 
 namespace nsb = ns::bench;
 namespace bs =  boost::simd;
 
-DEFINE_SCALAR_BENCH(scalar_log1p, bs::log1p);
+DEFINE_SCALAR_BENCH(scalar_musl_log10, bs::musl_(bs::log10));
 
 DEFINE_BENCH_MAIN()
 {
-  nsb::for_each<scalar_log1p, NS_BENCH_IEEE_TYPES>(-1, 1000);
+  nsb::for_each<scalar_musl_log10, NS_BENCH_IEEE_TYPES>(0, 1000);
 }
