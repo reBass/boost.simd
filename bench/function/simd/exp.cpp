@@ -5,6 +5,7 @@
 //                        See accompanying file LICENSE.txt or copy at
 //                            http://www.boost.org/LICENSE_1_0.txt
 // -------------------------------------------------------------------------------------------------
+#define BOOST_SIMD_NO_DENORMALS
 
 #include <simd_bench.hpp>
 #include <boost/simd/function/simd/exp.hpp>

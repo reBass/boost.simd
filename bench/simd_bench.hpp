@@ -37,7 +37,7 @@ ns::bench::setup setup()
   namespace nsb = ns::bench;
   return nsb::setup()
     .median(nsb::units::cpe_)
-    .really_during(2.)
+    .really_during(4.)
     ;
 }
 

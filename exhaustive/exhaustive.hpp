@@ -1,3 +1,4 @@
+//#undef _OPENMP
 // -------------------------------------------------------------------------------------------------
 /*!
   @file Main header for exhaustive components
@@ -266,18 +267,23 @@ namespace boost { namespace simd {
       std::cout << k << "/" << diff << " values computed.\n";
 
       double d = 1;
+      double ch = 0;
       for(std::size_t i = 0; i < M+1; i++, d*= 2.0)
       {
+        ch += histo[i];
+
         if(histo[i])
         {
           printf("%10u values (%.2f%%)\twithin %1.1f ULPs\t"
-                , histo[i], (histo[i]*100.0/k), (d < 2 ? 0 : d/4)
+                , histo[i], (ch*100.0/k), (d < 2 ? 0 : d/4)
                 );
           if(i)
+          {
             std::cout << std::scientific << std::setprecision(9)
                       << "in range [" << minin[i] << ", "<< maxin[i] << "]" << "."
                       << " Example: "<< minin[i] << " returns " << minval[i]
                       << " instead of " << minref[i];
+          }
           std::cout << std::endl;
         }
       }
