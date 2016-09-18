@@ -122,6 +122,7 @@ struct bench_experiment : ns::bench::experiment
   }
 };
 
+
 void describe()
 {
   std::cout << "::- --------------------------------------------------------------------------------------------------------------------------------------------------";
@@ -129,6 +130,19 @@ void describe()
   std::cout << "::- Compiler: " << BOOST_COMPILER << std::endl;
   std::cout << "::- Platform: " << BOOST_PLATFORM << std::endl;
   std::cout << "::- SIMD:     " << nsb::type_id<BOOST_SIMD_DEFAULT_SITE>() << std::endl;
+#ifdef BOOST_SIMD_NO_DENORMALS
+  std::cout << "::-   BOOST_SIMD_NO_DENORMALS "<< std::endl;
+#endif
+#ifdef BOOST_SIMD_NO_INVALIDS
+  std::cout << "::-   BOOST_SIMD_NO_DENORMALS "<< std::endl;
+#endif
+#ifdef BOOST_SIMD_NO_NANS
+  std::cout << "::-   BOOST_SIMD_NO_NANS "<< std::endl;
+#endif
+#ifdef BOOST_SIMD_NO_INFINITIES
+  std::cout << "::-   BOOST_SIMD_NO_INFINITIES "<< std::endl;
+#endif
+
   std::cout << "::- --------------------------------------------------------------------------------------------------------------------------------------------------";
   std::cout << std::endl;
 }

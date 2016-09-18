@@ -61,8 +61,8 @@ namespace boost { namespace simd { namespace ext
       auto test = is_less(a0, Smallestposval<A0>())&&isnez;
       if (any(test))
       {
-        k = if_minus(test, k, iA0(25));
-        x = if_else(test, x*A0(0x1p25f), x);
+        k = if_minus(test, k, iA0(23));
+        x = if_else(test, x*A0(0x1p23f), x);
       }
 #endif
       uiA0 ix = bitwise_cast<uiA0>(x);
