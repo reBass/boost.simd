@@ -10,16 +10,17 @@
 #ifndef BOOST_SIMD_ARCH_COMMON_DETAIL_SIMD_F_LOG_HPP_INCLUDED
 #define BOOST_SIMD_ARCH_COMMON_DETAIL_SIMD_F_LOG_HPP_INCLUDED
 
-
-#include <boost/simd/function/multiplies.hpp>
-#include <boost/simd/function/plus.hpp>
+#include <boost/simd/function/dec.hpp>
 #include <boost/simd/function/fma.hpp>
 #include <boost/simd/function/is_eqz.hpp>
 #include <boost/simd/function/if_nan_else.hpp>
 #include <boost/simd/function/if_else.hpp>
 #include <boost/simd/function/if_else_zero.hpp>
+#include <boost/simd/function/if_plus.hpp>
 #include <boost/simd/function/is_ltz.hpp>
-#include <boost/simd/arch/common/detail/generic/f_log_kernel.hpp>
+#include <boost/simd/function/horn.hpp>
+#include <boost/simd/function/sqr.hpp>
+#include <boost/simd/function/tofloat.hpp>
 #include <boost/simd/arch/common/detail/tags.hpp>
 #include <boost/simd/constant/mhalf.hpp>
 #include <boost/simd/constant/minf.hpp>
@@ -30,6 +31,7 @@
 #include <boost/simd/detail/constant/log10_elo.hpp>
 #include <boost/simd/detail/constant/log10_2hi.hpp>
 #include <boost/simd/detail/constant/log10_2lo.hpp>
+#include <boost/simd/constant/sqrt_2o_2.hpp>
 #include <boost/simd/detail/dispatch/meta/as_integer.hpp>
 #include <boost/simd/detail/dispatch/meta/scalar_of.hpp>
 
@@ -95,9 +97,40 @@ namespace boost { namespace simd
     template < class A0 >
     struct logarithm< A0, tag::simd_type, float>
     {
-      using int_type = bd::as_integer_t<A0, signed>;
+      using iA0 = bd::as_integer_t<A0, signed>;
       using sA0 = bd::scalar_of_t<A0>;
-      using  kernel_t = kernel<A0, tag::simd_type, float>;
+
+      static BOOST_FORCEINLINE void kernel_log(const A0& a0,
+                                               A0& fe,
+                                               A0& x,
+                                               A0& x2,
+                                               A0& y) BOOST_NOEXCEPT
+      {
+        iA0 e;
+        std::tie(x, e)= fast_(frexp)(a0);
+        auto xltsqrthf = (x < Sqrt_2o_2<A0>());
+        fe = if_plus(xltsqrthf, tofloat(e), Mone<A0>());
+        x =  dec(if_plus(xltsqrthf, x, x));
+        x2 = sqr(x);
+        // performances informations using this kernel for boost::simd::log
+        // exhaustive and bench tests with g++-4.7 sse4.2 or scalar give:
+        // at most 0.5 ulp  for input in [0, 3.40282e+38]
+        // 2130706656 values computed.
+        // 2127648316 values (99.86%)  within 0.0 ULPs
+        //    3058340 values (0.14%)   within 0.5 ULPs
+        // bench produces  8.9 cycles/value (simd) 34.5 cycles/value (scalar) full computation
+        // bench produces  7.1 cycles/value (simd) 32.2 cycles/value (scalar) with NO_DENORMALS, NO_INVALIDS etc.
+        y =  horn< A0,
+          0x3eaaaaa9, //      3.3333328e-01
+          0xbe800064, //     -2.5000298e-01
+          0x3e4cd0a3, //      2.0001464e-01
+          0xbe2a6aa0, //     -1.6642237e-01
+          0x3e116e80, //      1.4202309e-01
+          0xbe04d6b7, //     -1.2972532e-01
+          0x3e0229f9, //      1.2711324e-01
+          0xbda5dff0  //     -8.0993533e-02
+          >(x)*x*x2;
+      }
 
       static BOOST_FORCEINLINE A0 log(const A0& a0) BOOST_NOEXCEPT
       {
@@ -115,7 +148,7 @@ namespace boost { namespace simd
         // log(a0) = fe*Log_2hi+ (0.5f*x*x +(fe*Log_2lo+y))
         // These operations are order dependent: the parentheses do matter
         A0 x, fe, x2, y;
-        kernel_t::log(z, fe, x, x2, y);
+        kernel_log(z, fe, x, x2, y);
         y = bs::fma(fe, Log_2lo<A0>(), y);
         y = bs::fma(Mhalf<A0>(), x2, y);
 #ifdef BOOST_SIMD_NO_DENORMALS
@@ -137,7 +170,7 @@ namespace boost { namespace simd
         //log2(a0) = ((l2em1*x+(l2em1*(y+x*x/2)))+(y+x*x/2)))+x+fe for best results
         // once again the order is very important.
         A0 x, fe, x2, y;
-        kernel_t::log(z, fe, x, x2, y);
+        kernel_log(z, fe, x, x2, y);
         y = bs::fma(Mhalf<A0>(),x2, y);
         z = bs::fma(x,Log2_em1<A0>(),y*Log2_em1<A0>());
 #ifdef BOOST_SIMD_NO_DENORMALS
@@ -158,7 +191,7 @@ namespace boost { namespace simd
         // here there are two multiplication: log of fraction by log10(e) and base 2 exponent by log10(2)
         // and we have to split log10(e) and log10(2) in two parts to get extra precision when needed
         A0 x, fe, x2, y;
-        kernel_t::log(z, fe, x, x2, y);
+        kernel_log(z, fe, x, x2, y);
         y = bs::fma(x2, Mhalf<A0>(), y);
         z = (x+y)* Log10_elo<A0>();
         z = bs::fma(y, Log10_ehi<A0>(), z);

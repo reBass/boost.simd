@@ -25,7 +25,6 @@
 #include <boost/simd/constant/twotonmb.hpp>
 #include <boost/simd/function/abs.hpp>
 #endif
-#include <boost/simd/arch/common/detail/generic/f_log_kernel.hpp>
 #include <boost/simd/arch/common/detail/tags.hpp>
 #include <boost/simd/detail/constant/log10_2hi.hpp>
 #include <boost/simd/detail/constant/log10_2lo.hpp>
@@ -34,13 +33,21 @@
 #include <boost/simd/constant/log2_em1.hpp>
 #include <boost/simd/detail/constant/log_2hi.hpp>
 #include <boost/simd/detail/constant/log_2lo.hpp>
+#include <boost/simd/constant/sqrt_2o_2.hpp>
 #include <boost/simd/constant/mhalf.hpp>
 #include <boost/simd/constant/minf.hpp>
 #include <boost/simd/constant/nan.hpp>
 #include <boost/simd/constant/zero.hpp>
+
+#include <boost/simd/function/dec.hpp>
 #include <boost/simd/function/fma.hpp>
+#include <boost/simd/function/frexp.hpp>
+#include <boost/simd/function/horn.hpp>
+#include <boost/simd/function/if_plus.hpp>
 #include <boost/simd/function/is_eqz.hpp>
 #include <boost/simd/function/is_ltz.hpp>
+#include <boost/simd/function/sqr.hpp>
+#include <boost/simd/function/tofloat.hpp>
 #include <boost/simd/detail/dispatch/meta/as_integer.hpp>
 #include <boost/simd/detail/dispatch/meta/scalar_of.hpp>
 
@@ -58,7 +65,39 @@ namespace boost { namespace simd
     template < class A0 >
     struct logarithm< A0, tag::not_simd_type, float>
     {
-      using kernel_t = kernel<A0, tag::not_simd_type, float>;
+      using iA0 = bd::as_integer_t<A0, signed>;
+
+      static BOOST_FORCEINLINE void kernel_log(const A0& a0,
+                                               A0& fe,
+                                               A0& x,
+                                               A0& x2,
+                                               A0& y) BOOST_NOEXCEPT
+      {
+        iA0 e;
+        std::tie(x, e)= fast_(frexp)(a0);
+        auto xltsqrthf = (x < Sqrt_2o_2<A0>());
+        fe = if_plus(xltsqrthf, tofloat(e), Mone<A0>());
+        x =  dec(if_plus(xltsqrthf, x, x));
+        x2 = sqr(x);
+        // performances informations using this kernel for boost::simd::log
+        // exhaustive and bench tests with g++-4.7 sse4.2 or scalar give:
+        // at most 0.5 ulp  for input in [0, 3.40282e+38]
+        // 2130706656 values computed.
+        // 2127648316 values (99.86%)  within 0.0 ULPs
+        //    3058340 values (0.14%)   within 0.5 ULPs
+        // bench produces  8.9 cycles/value (simd) 34.5 cycles/value (scalar) full computation
+        // bench produces  7.1 cycles/value (simd) 32.2 cycles/value (scalar) with NO_DENORMALS, NO_INVALIDS etc.
+        y =  horn< A0,
+          0x3eaaaaa9, //      3.3333328e-01
+          0xbe800064, //     -2.5000298e-01
+          0x3e4cd0a3, //      2.0001464e-01
+          0xbe2a6aa0, //     -1.6642237e-01
+          0x3e116e80, //      1.4202309e-01
+          0xbe04d6b7, //     -1.2972532e-01
+          0x3e0229f9, //      1.2711324e-01
+          0xbda5dff0  //     -8.0993533e-02
+          >(x)*x*x2;
+      }
 
       static BOOST_FORCEINLINE A0 log(A0 const& a0) BOOST_NOEXCEPT
       {
@@ -81,7 +120,7 @@ namespace boost { namespace simd
         }
       #endif
         A0 x, fe, x2, y;
-        kernel_t::log(z, fe, x, x2, y);
+        kernel_log(z, fe, x, x2, y);
         y = fma(fe, Log_2lo<A0>(), y);
         y = fma(Mhalf<A0>(), x2, y);
       #ifdef BOOST_SIMD_NO_DENORMALS
@@ -112,7 +151,7 @@ namespace boost { namespace simd
         }
 #endif
         A0 x, fe, x2, y;
-        kernel_t::log(z, fe, x, x2, y);
+        kernel_log(z, fe, x, x2, y);
         y = fma(Mhalf<A0>(),x2, y);
         z = fma(x,Log2_em1<A0>(),y*Log2_em1<A0>());
 #ifdef BOOST_SIMD_NO_DENORMALS
@@ -143,7 +182,7 @@ namespace boost { namespace simd
         }
 #endif
         A0 x, fe, x2, y;
-        kernel_t::log(z, fe, x, x2, y);
+        kernel_log(z, fe, x, x2, y);
         y = fma(Mhalf<A0>(), x2, y);
         z = (x+y)*Log10_elo<A0>();
         z = fma( y, Log10_ehi<A0>(), z);
