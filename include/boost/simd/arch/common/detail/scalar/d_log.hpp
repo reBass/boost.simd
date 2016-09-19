@@ -95,8 +95,6 @@ namespace boost { namespace simd
 
       static BOOST_FORCEINLINE A0 log( A0 a0) BOOST_NOEXCEPT
       {
-        // ln(2)hi  =  6.93147180369123816490e-01  or  0x3fe62e42fee00000
-        // ln(2)lo  =  1.90821492927058770002e-10  or  0x3dea39ef35793c76
       #ifndef BOOST_SIMD_NO_INFINITIES
         if (a0 == Inf<A0>()) return a0;
       #endif

@@ -18,7 +18,7 @@ struct raw_log
 {
   float operator()(float x) const
   {
-    return std::log(double(x));
+    return bs::log(double(x));
   }
 };
 

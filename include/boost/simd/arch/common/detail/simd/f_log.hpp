@@ -28,6 +28,7 @@
 #include <boost/simd/constant/minf.hpp>
 #include <boost/simd/detail/constant/log_2hi.hpp>
 #include <boost/simd/detail/constant/log_2lo.hpp>
+#include <boost/simd/constant/log_2.hpp>
 #include <boost/simd/constant/log2_em1.hpp>
 #include <boost/simd/detail/constant/log10_ehi.hpp>
 #include <boost/simd/detail/constant/log10_elo.hpp>
@@ -36,6 +37,7 @@
 #include <boost/simd/constant/sqrt_2o_2.hpp>
 #include <boost/simd/detail/dispatch/meta/as_integer.hpp>
 #include <boost/simd/detail/dispatch/meta/scalar_of.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 #ifndef BOOST_SIMD_NO_NANS
 #include <boost/simd/function/is_nan.hpp>
@@ -99,7 +101,7 @@ namespace boost { namespace simd
     template < class A0 >
     struct logarithm< A0, tag::simd_type, float>
     {
-
+      using iA0 = bd::as_integer_t<A0,   signed>;
       static BOOST_FORCEINLINE void kernel_log(const A0& a0,
                                     A0& dk,
                                     A0& hfsq,
@@ -107,96 +109,130 @@ namespace boost { namespace simd
                                     A0& r,
                                     A0& f) BOOST_NOEXCEPT
     {
-
-//       using uiA0 = bd::as_integer_t<A0, unsigned>;
-       using iA0 = bd::as_integer_t<A0,   signed>;
-//       A0 x =  if_nan_else(is_lez(a0), a0);
-//       iA0 k(0);
-//       auto isnez = is_nez(a0);
-// #ifndef BOOST_SIMD_NO_DENORMALS
-//       auto test = is_less(a0, Smallestposval<A0>())&&isnez;
-//       if (any(test))
-//       {
-//         k = if_minus(test, k, iA0(25));
-//         x = if_else(test, x*A0(0x1p25f), x);
-//       }
-// #endif
-//       uiA0 ix = bitwise_cast<uiA0>(x);
-//       /* reduce x into [sqrt(2)/2, sqrt(2)] */
-//       ix += 0x3f800000 - 0x3f3504f3;
-//       k += bitwise_cast<iA0>(ix>>23) - 0x7f;
-//       ix = (ix&0x007fffff) + 0x3f3504f3;
-//       x =  bitwise_cast<A0>(ix);
-//      using i_t = bd::as_integer_t<A0, signed>;
-      iA0 k;
-      A0 x;
-      std::tie(x, k) = fast_(frexp)(a0);
-      const iA0 x_lt_sqrthf = if_else_zero(is_greater(Sqrt_2o_2<A0>(), x),Mone<iA0>());
-      k += x_lt_sqrthf;
-      f = dec(x+bitwise_and(x, x_lt_sqrthf));
-      dk = tofloat(k);
+      A0 a00 =  if_nan_else(is_ltz(a0), a0);
+      reduce_musl(a00, dk, f);
       s = f/(Two<A0>()+f);
       A0 z = sqr(s);
-      r =  horn<A0
-        , 0x3f2aaaaa  //  0.66666662693 0xaaaaaa.0p-24
-        , 0x3eccce13  //  0.40000972152 0xccce13.0p-25
-        , 0x3e91e9ee  //  0.28498786688 0x91e9ee.0p-25
-        , 0x3e789e26  //  0.24279078841 0xf89e26.0p-26
-        >(z)*z;
-      hfsq = (Half<A0>()* sqr(f));
+//       r =  horn<A0
+//         , 0x3f2aaaaa  //  0.66666662693 0xaaaaaa.0p-24
+//         , 0x3eccce13  //  0.40000972152 0xccce13.0p-25
+//         , 0x3e91e9ee  //  0.28498786688 0x91e9ee.0p-25
+//         , 0x3e789e26  //  0.24279078841 0xf89e26.0p-26
+//         >(z)*z;
+      A0 w = sqr(z);
+      A0 t1= w*horn<A0, 0x3eccce13, 0x3e789e26>(w); //fma(w, Lg4, Lg2); //w*(Lg2+w*Lg4);
+      A0 t2= z*horn<A0, 0x3f2aaaaa, 0x3e91e9ee>(w); //fma( w, Lg3, Lg1); //z*(Lg1+w*Lg3);
+      r = t2 + t1;
+      hfsq = Half<A0>()*sqr(f);
     }
 
-    static BOOST_FORCEINLINE A0 log(A0 a0) BOOST_NOEXCEPT
-    {
-#ifndef BOOST_SIMD_NO_DENORMALS
-      auto denormal = is_less(bs::abs(a0), Smallestposval<A0>());
-      A0 t = A0(0);
-      if (any(denormal))
+      static BOOST_FORCEINLINE void reduce(const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
+      // reduce x into [sqrt(2)/2, sqrt(2)]
       {
-        a0 = if_else(denormal, a0*Twotonmb<A0>(), a0);
-        t = if_else_zero(denormal, Mlogtwo2nmb<A0>());
+        iA0 k;
+        A0 x;
+        std::tie(x, k) = fast_(frexp)(a0);
+//         const iA0 x_lt_sqrthf = if_else_zero(is_greater(Sqrt_2o_2<A0>(), x),Mone<iA0>());
+//         k += x_lt_sqrthf;
+        A0  x_lt_sqrthf = genmask(is_greater(Sqrt_2o_2<A0>(), x));
+        k += bitwise_cast<iA0>(x_lt_sqrthf);
+        f = dec(x+bitwise_and(x, x_lt_sqrthf));
+        dk = tofloat(k);
+      }
+      static BOOST_FORCEINLINE void reduce_musl(const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
+      // reduce x into [sqrt(2)/2, sqrt(2)]
+      {
+        using uiA0 = bd::as_integer_t<A0, unsigned>;
+        uiA0 ix = bitwise_cast<uiA0>(a0);
+        iA0 k(0);
+        /* reduce x into [sqrt(2)/2, sqrt(2)] */
+        ix += 0x3f800000 - 0x3f3504f3;
+        k += bitwise_cast<iA0>(ix>>23) - 0x7f;
+        ix = (ix&0x007fffff) + 0x3f3504f3;
+        A0 x =  bitwise_cast<A0>(ix);
+        f = dec(x);
+        dk = tofloat(k);
+      }
+
+#ifndef BOOST_SIMD_NO_DENORMALS
+      static BOOST_FORCEINLINE void denormal_prepare(A0& a0,  A0& t, A0 const & fac) BOOST_NOEXCEPT
+      {
+        auto denormal = is_less(bs::abs(a0), Smallestposval<A0>());
+        if (any(denormal))
+        {
+          a0 = if_else(denormal, a0*Twotonmb<A0>(), a0);
+          t = if_else_zero(denormal, fac);
+        }
+      }
+
+      static BOOST_FORCEINLINE void denormal_finalize(A0& y,const A0& t) BOOST_NOEXCEPT
+      {
+        y += t;
       }
 #endif
-      A0 dk, hfsq, s, R, f;
-      kernel_log(a0, dk, hfsq, s, R, f);
-      A0 y =  (dk* Log_2hi<A0>())-
-        ((hfsq-(s*(hfsq+R)+(dk*Log_2lo<A0>())))-f);
+
+      static BOOST_FORCEINLINE A0 log(A0 a0) BOOST_NOEXCEPT
+      {
+        auto isnez = is_nez(a0);
 #ifndef BOOST_SIMD_NO_DENORMALS
-      y+= t;
+        A0 t(0);
+        denormal_prepare(a0, t, Mlogtwo2nmb<A0>() );
 #endif
-      return finalize(a0, y);
-    }
+        A0 dk, hfsq, s, R, f;
+        kernel_log(a0, dk, hfsq, s, R, f);
+//      A0 y = fma(s, (hfsq+R), dk*Log_2lo<A0>() - hfsq + f + dk*Log_2hi<A0>());
+        A0 y =  (dk* Log_2hi<A0>())- ((hfsq-(s*(hfsq+R)+(dk*Log_2lo<A0>())))-f);
+//       A0 y = fma(s, (hfsq+R), dk*Log_2<A0>() - hfsq + f);   // this give 10 value at 1 ulp !
+#ifndef BOOST_SIMD_NO_DENORMALS
+        denormal_finalize(y, t);
+#endif
+        return finalize(a0, isnez, y);
+      }
 
-    static BOOST_FORCEINLINE A0 log2(const A0& a0) BOOST_NOEXCEPT
-    {
-      A0 dk, hfsq, s, R, f;
-      kernel_log(a0, dk, hfsq, s, R, f);
-      A0 y = -(hfsq-(s*(hfsq+R))-f)*Invlog_2<A0>()+dk;
-      return finalize(a0, y);
-    }
+      static BOOST_FORCEINLINE A0 log2(A0 a0) BOOST_NOEXCEPT
+      {
+        auto isnez = is_nez(a0);
+#ifndef BOOST_SIMD_NO_DENORMALS
+        A0 t(0);
+        denormal_prepare(a0, t, Mlog2two2nmb<A0>());
+#endif
+        A0 dk, hfsq, s, R, f;
+        kernel_log(a0, dk, hfsq, s, R, f);
+        A0 y = -(hfsq-(s*(hfsq+R))-f)*Invlog_2<A0>()+dk;
+#ifndef BOOST_SIMD_NO_DENORMALS
+        denormal_finalize(y, t);
+#endif
+        return finalize(a0, isnez, y);
+      }
 
-    static BOOST_FORCEINLINE A0 log10(const A0& a0) BOOST_NOEXCEPT
-    {
-      A0 dk, hfsq, s, R, f;
-      kernel_log(a0, dk, hfsq, s, R, f);
-      A0 y = -(hfsq-(s*(hfsq+R))-f)*Invlog_10<A0>()+dk*Log_2olog_10<A0>();
-      return finalize(a0, y);
-    }
-  private:
-    static BOOST_FORCEINLINE A0 finalize(const A0& a0, const A0& y) BOOST_NOEXCEPT
-    {
-    #ifdef BOOST_SIMD_NO_NANS
-      auto test =  is_ltz(a0);
-    #else
-      auto test =  logical_or(is_ltz(a0), is_nan(a0));
-    #endif
-      A0 y1 = if_nan_else(test, y);
-    #ifndef BOOST_SIMD_NO_INFINITIES
-      y1 = if_else(is_equal(a0, Inf<A0>()), a0, y1);
-    #endif
-      return if_else(is_eqz(a0), Minf<A0>(), y1);
-    }
-  };
+      static BOOST_FORCEINLINE A0 log10(A0 a0) BOOST_NOEXCEPT
+      {
+        auto isnez = is_nez(a0);
+#ifndef BOOST_SIMD_NO_DENORMALS
+        A0 t(0);
+        denormal_prepare(a0, t, Mlog10two2nmb<A0>());
+#endif
+        A0 dk, hfsq, s, R, f;
+        kernel_log(a0, dk, hfsq, s, R, f);
+        A0 y = -(hfsq-(s*(hfsq+R))-f)*Invlog_10<A0>()+dk*Log_2olog_10<A0>();
+#ifndef BOOST_SIMD_NO_DENORMALS
+        denormal_finalize(y, t);
+#endif
+        return finalize(a0, isnez, y);
+      }
+
+    private:
+      template < class LA0>
+      static BOOST_FORCEINLINE A0 finalize(const A0 & a0, LA0 const & isnez, const A0& y) BOOST_NOEXCEPT
+      {
+#ifndef BOOST_SIMD_NO_INFINITIES
+        return if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), y), Minf<A0>());
+#else
+        boost::ignore_unused(a0);
+        return if_else(isnez, y, Minf<A0>());
+#endif
+      }
+    };
   }
 } }
 
@@ -330,4 +366,3 @@ namespace boost { namespace simd
 // } }
 
 // #endif
-

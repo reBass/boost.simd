@@ -24,7 +24,7 @@ void test(Env& $)
   T a1[N], b[N], c[N];
   for(std::size_t i = 0; i < N; ++i)
   {
-    a1[i] = (i%2) ? T(i) : bs::rec(T(i));
+    a1[i] = (i%2) ? T(i): T(i); //: bs::rec(T(i));
     b[i] = bs::log(a1[i]) ;
 //    c[i] = bs::std_(bs::log)(a1[i]) ;
   }

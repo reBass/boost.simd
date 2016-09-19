@@ -68,6 +68,7 @@ namespace boost { namespace simd { namespace ext
       uiA0 ix = bitwise_cast<uiA0>(x);
       /* reduce x into [sqrt(2)/2, sqrt(2)] */
       ix += 0x3f800000 - 0x3f3504f3;
+    //ix +=
       k += bitwise_cast<iA0>(ix>>23) - 0x7f;
       ix = (ix&0x007fffff) + 0x3f3504f3;
       x =  bitwise_cast<A0>(ix);
@@ -131,18 +132,29 @@ namespace boost { namespace simd { namespace ext
 //       A0 t1 = w*fma(w, fma(w, Lg6, Lg4), Lg2); //w*(Lg2+w*(Lg4+w*Lg6));
 //       A0 t2 = z*fma(w, fma(w, fma(w, Lg7, Lg5), Lg3), Lg1); //      z*(Lg1+w*(Lg3+w*(Lg5+w*Lg7)));
 //       A0 R = t2 + t1;
-      A0 R =  horn<A0
-        , 0x3FE5555555555593     //  6.666666666666735130e-01
-        , 0x3FD999999997FA04     //  3.999999999940941908e-01
-        , 0x3FD2492494229359     //  2.857142874366239149e-01
-        , 0x3FCC71C51D8E78AF     //  2.222219843214978396e-01
-        , 0x3FC7466496CB03DE     //  1.818357216161805012e-01
-        , 0x3FC39A09D078C69F     //  1.531383769920937332e-01
-        , 0x3FC2F112DF3E5244     //  1.479819860511658591e-01
-        >(z)*z;
+      A0 w = sqr(z);
+      A0 t1= w*horn<A0,
+                    0x3fd999999997fa04ll,
+                    0x3fcc71c51d8e78afll,
+                    0x3fc39a09d078c69fll
+                    > (w);
+      A0 t2= z*horn<A0,
+                    0x3fe5555555555593ll,
+                    0x3fd2492494229359ll,
+                    0x3fc7466496cb03dell,
+                    0x3fc2f112df3e5244ll
+                    > (w);
+      A0 R = t2+t1;
+//       A0 R =  horn<A0
+//         , 0x3FE5555555555593     //  6.666666666666735130e-01
+//         , 0x3FD999999997FA04     //  3.999999999940941908e-01
+//         , 0x3FD2492494229359     //  2.857142874366239149e-01
+//         , 0x3FCC71C51D8E78AF     //  2.222219843214978396e-01
+//         , 0x3FC7466496CB03DE     //  1.818357216161805012e-01
+//         , 0x3FC39A09D078C69F     //  1.531383769920937332e-01
+//         , 0x3FC2F112DF3E5244     //  1.479819860511658591e-01
+//         >(z)*z;
       A0 r = fma(s, (hfsq+R), fma(dk, Log_2lo<A0>(), - hfsq + f + dk*Log_2hi<A0>()));
-//      A0 r = fma(dk, ln2_hi, fma(s, (hfsq+R), fma(dk, ln2_lo, - hfsq + f)));
-
 #ifndef BOOST_SIMD_NO_INFINITIES
       return if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
 #else
