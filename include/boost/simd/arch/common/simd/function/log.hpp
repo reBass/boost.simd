@@ -128,10 +128,6 @@ namespace boost { namespace simd { namespace ext
       A0 hfsq = Half<A0>()*sqr(f);
       A0 s = f/(2.0f + f);
       A0 z = sqr(s);
-//       A0 w = sqr(z);
-//       A0 t1 = w*fma(w, fma(w, Lg6, Lg4), Lg2); //w*(Lg2+w*(Lg4+w*Lg6));
-//       A0 t2 = z*fma(w, fma(w, fma(w, Lg7, Lg5), Lg3), Lg1); //      z*(Lg1+w*(Lg3+w*(Lg5+w*Lg7)));
-//       A0 R = t2 + t1;
       A0 w = sqr(z);
       A0 t1= w*horn<A0,
                     0x3fd999999997fa04ll,

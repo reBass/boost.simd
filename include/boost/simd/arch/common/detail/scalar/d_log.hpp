@@ -60,22 +60,19 @@ namespace boost { namespace simd
     template < class A0 >
     struct logarithm< A0, tag::not_simd_type, double>
     {
+      using uiA0 = bd::as_integer_t<A0, unsigned>;
+      using iA0 = bd::as_integer_t<A0,   signed>;
+
       static BOOST_FORCEINLINE void kernel_log(A0 a0,
-                                    A0& dk,
-                                    A0& hfsq,
-                                    A0& s,
-                                    A0& r,
-                                    A0& f) BOOST_NOEXCEPT
+                                               iA0 k,
+                                               A0& dk,
+                                               A0& hfsq,
+                                               A0& s,
+                                               A0& r,
+                                               A0& f) BOOST_NOEXCEPT
       {
-        using i_t = bd::as_integer_t<A0, signed>;
-        A0 x;
-        i_t k;
-        std::tie(x, k) = fast_(frexp)(a0);
-        const i_t x_lt_sqrthf = (Sqrt_2o_2<A0>() > x) ? Mone<i_t>() : Zero<i_t>();
-        k += x_lt_sqrthf;
-        f = dec(x+bitwise_and(x, genmask(x_lt_sqrthf)));
-        dk = tofloat(k);
-        s = f/(Two<A0>()+f);
+        reduce_musl(a0, k, dk, f);
+        s = f/(2.0+f);
         A0 z = sqr(s);
         A0 w = sqr(z);
         A0 t1= w*horn<A0,
@@ -90,37 +87,85 @@ namespace boost { namespace simd
                       0x3fc2f112df3e5244ll
                       > (w);
         r = t2+t1;
-        hfsq = Half<A0>()*sqr(f);
+        hfsq = 0.5*sqr(f);
       }
 
-      static BOOST_FORCEINLINE A0 log( A0 a0) BOOST_NOEXCEPT
+//       static BOOST_FORCEINLINE void reduce(const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
+//       /* reduce x into [sqrt(2)/2, sqrt(2)] */
+//       {
+//         iA0 k;
+//         A0 x;
+//         std::tie(x, k) = fast_(frexp)(a0);
+//         A0  x_lt_sqrthf = genmask(is_greater(Sqrt_2o_2<A0>(), x));
+//         k += bitwise_cast<iA0>(x_lt_sqrthf);
+//         f = dec(x+bitwise_and(x, x_lt_sqrthf));
+//         dk = tofloat(k);
+//        }
+
+      static BOOST_FORCEINLINE void reduce_musl(A0 a0, iA0 k, A0& dk, A0& f) BOOST_NOEXCEPT
+      /* reduce x into [sqrt(2)/2, sqrt(2)] */
       {
-      #ifndef BOOST_SIMD_NO_INFINITIES
-        if (a0 == Inf<A0>()) return a0;
-      #endif
-      #ifdef BOOST_SIMD_NO_NANS
-        if (is_ltz(a0)) return Nan<A0>();
-      #else
-        if (is_nan(a0)||is_ltz(a0)) return Nan<A0>();
-      #endif
-        if (is_eqz(a0)) return Minf<A0>();
+        using uiA0 = bd::as_integer_t<A0, unsigned>;
+        uiA0 hx = bitwise_cast<uiA0>(a0) >> 32;
+        hx += 0x3ff00000 - 0x3fe6a09e;
+        k += bitwise_cast<iA0>(hx>>20) - 0x3ff;
+        hx = (hx&0x000fffff) + 0x3fe6a09e;
+        A0 x = bitwise_cast<A0>(hx<<32 | (bitwise_and(0xffffffffull, bitwise_cast<uiA0>(a0))));
+        f = dec(x);
+        dk = tofloat(k);
+       }
+
+
+      static BOOST_FORCEINLINE bool early_return(A0& a0, A0& res, iA0 & k) BOOST_NOEXCEPT
+      {
+
+        uiA0 hx = bitwise_cast<uiA0>(a0) >> 32;
+        if (hx < 0x00100000 || hx>>31) {
+          if(is_eqz(a0))
+          {
+            res = Minf<A0>();  /* log(+-0)=-inf */
+            return true;
+          }
+          if (hx>>31)
+          {
+            res = Nan<A0>(); /* log(-#) = NaN */
+            return true;
+          }
+          /* subnormal number, scale x up */
+          k -= 54;
+          a0 *= 0x1p54;
+          hx = bitwise_cast<uiA0>(a0) >> 32;
+          return false;
+        }
+        else if (hx >= 0x7ff00000)
+        {
+          res =  a0;
+          return true;
+        }
+        else if (a0 == One<A0>())
+        {
+          // res = 0.0;
+          return true;
+        }
+        else
+          return false;
+      }
+
+      static BOOST_FORCEINLINE A0 log(A0 a0) BOOST_NOEXCEPT
+      {
+        iA0 k = 0;
+        A0 res = 0.0;
+        if (early_return(a0, res, k)) return res;
         A0 dk, hfsq, s, R, f;
-        kernel_log(a0, dk, hfsq, s, R, f);
-        return  dk*Constant<A0, 0x3fe62e42fee00000ll>()-
-          ((hfsq-(s*(hfsq+R)+dk*Constant<A0, 0x3dea39ef35793c76ll>()))-f);
+        kernel_log(a0, k, dk, hfsq, s, R, f);
+        return  (dk* Log_2hi<A0>())- ((hfsq-(s*(hfsq+R)+(dk*Log_2lo<A0>())))-f);
       }
 
       static BOOST_FORCEINLINE A0 log2(A0 a0) BOOST_NOEXCEPT
       {
-      #ifndef BOOST_SIMD_NO_INFINITIES
-        if (a0 == Inf<A0>()) return a0;
-      #endif
-      #ifdef BOOST_SIMD_NO_NANS
-        if (is_ltz(a0)) return Nan<A0>();
-      #else
-        if (is_nan(a0)||is_ltz(a0)) return Nan<A0>();
-      #endif
-        if (is_eqz(a0)) return Minf<A0>();
+        iA0 k = 0;
+        A0 res = 0.0;
+        if (early_return(a0, res, k)) return res;
         A0 dk, hfsq, s, R, f;
         kernel_log(a0, dk, hfsq, s, R, f);
         return -(hfsq-(s*(hfsq+R))-f)*Invlog_2<A0>()+dk;
@@ -128,15 +173,9 @@ namespace boost { namespace simd
 
       static BOOST_FORCEINLINE A0 log10(A0 a0) BOOST_NOEXCEPT
       {
-      #ifndef BOOST_SIMD_NO_INFINITIES
-        if (a0 == Inf<A0>()) return a0;
-      #endif
-      #ifdef BOOST_SIMD_NO_NANS
-        if (is_ltz(a0)) return Nan<A0>();
-      #else
-        if (is_nan(a0)||is_ltz(a0)) return Nan<A0>();
-      #endif
-        if (is_eqz(a0)) return Minf<A0>();
+        iA0 k = 0;
+        A0 res = 0.0;
+        if (early_return(a0, res, k)) return res;
         A0 dk, hfsq, s, R, f;
         kernel_log(a0, dk, hfsq, s, R, f);
         return -(hfsq-(s*(hfsq+R))-f)*Invlog_10<A0>()+dk*Log_2olog_10<A0>();
@@ -145,4 +184,5 @@ namespace boost { namespace simd
 
   }
 } }
+
 #endif
