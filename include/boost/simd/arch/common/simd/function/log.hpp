@@ -32,15 +32,27 @@ namespace boost { namespace simd { namespace ext
                           , (typename A0, typename X)
                           , (detail::is_native<X>)
                           , bd::cpu_
-                          , bs::pack_< bd::floating_<A0>, X>
+                          , bs::pack_< bd::single_<A0>, X>
                           )
   {
     BOOST_FORCEINLINE A0 operator() (A0 const & a0) const BOOST_NOEXCEPT
     {
-      return detail::logarithm<A0,tag::simd_type>::log(a0);
+      return detail::logarithm<A0,tag::simd_type,musl_tag>::log(a0);
     }
   };
 
+  BOOST_DISPATCH_OVERLOAD_IF ( log_
+                          , (typename A0, typename X)
+                          , (detail::is_native<X>)
+                          , bd::cpu_
+                          , bs::pack_< bd::double_<A0>, X>
+                          )
+  {
+    BOOST_FORCEINLINE A0 operator() (A0 const & a0) const BOOST_NOEXCEPT
+    {
+      return detail::logarithm<A0,tag::simd_type,regular_tag>::log(a0);
+    }
+  };
   BOOST_DISPATCH_OVERLOAD_IF ( log_
                           , (typename A0, typename X)
                           , (detail::is_native<X>)
@@ -75,20 +87,26 @@ namespace boost { namespace simd { namespace ext
       A0 f = dec(x);
       A0 s = f/(2.0f + f);
       A0 z = sqr(s);
-      A0 R =  horn<A0
-        , 0x3f2aaaaa  //  0.66666662693 0xaaaaaa.0p-24
-        , 0x3eccce13  //  0.40000972152 0xccce13.0p-25
-        , 0x3e91e9ee  //  0.28498786688 0x91e9ee.0p-25
-        , 0x3e789e26  //  0.24279078841 0xf89e26.0p-26
-        >(z)*z;
+//       A0 R =  horn<A0
+//         , 0x3f2aaaaa  //  0.66666662693 0xaaaaaa.0p-24
+//         , 0x3eccce13  //  0.40000972152 0xccce13.0p-25
+//         , 0x3e91e9ee  //  0.28498786688 0x91e9ee.0p-25
+//         , 0x3e789e26  //  0.24279078841 0xf89e26.0p-26
+//         >(z)*z;
+      A0 w = sqr(z);
+      A0 t1= w*horn<A0, 0x3eccce13, 0x3e789e26>(w);
+      A0 t2= z*horn<A0, 0x3f2aaaaa, 0x3e91e9ee>(w);
+      A0 R = t2 + t1;
+
       A0 hfsq = Half<A0>()*sqr(f);
       A0 dk = tofloat(k);
       A0 r = fma(s, (hfsq+R), dk*Log_2lo<A0>() - hfsq + f + dk*Log_2hi<A0>());
 #ifndef BOOST_SIMD_NO_INFINITIES
-      return if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
+      A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
 #else
-      return if_else(isnez, r, Minf<A0>());
+      A0 zz = if_else(isnez, r, Minf<A0>());
 #endif
+      return if_nan_else(is_ltz(a0), zz);
     }
   };
 
@@ -141,21 +159,13 @@ namespace boost { namespace simd { namespace ext
                     0x3fc2f112df3e5244ll
                     > (w);
       A0 R = t2+t1;
-//       A0 R =  horn<A0
-//         , 0x3FE5555555555593     //  6.666666666666735130e-01
-//         , 0x3FD999999997FA04     //  3.999999999940941908e-01
-//         , 0x3FD2492494229359     //  2.857142874366239149e-01
-//         , 0x3FCC71C51D8E78AF     //  2.222219843214978396e-01
-//         , 0x3FC7466496CB03DE     //  1.818357216161805012e-01
-//         , 0x3FC39A09D078C69F     //  1.531383769920937332e-01
-//         , 0x3FC2F112DF3E5244     //  1.479819860511658591e-01
-//         >(z)*z;
       A0 r = fma(s, (hfsq+R), fma(dk, Log_2lo<A0>(), - hfsq + f + dk*Log_2hi<A0>()));
 #ifndef BOOST_SIMD_NO_INFINITIES
-      return if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
+      A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
 #else
-      return if_else(isnez, r, Minf<A0>());
+      A0 zz = if_else(isnez, r, Minf<A0>());
 #endif
+      return if_nan_else(is_ltz(a0), zz);
     }
   };
 

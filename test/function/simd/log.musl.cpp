@@ -13,6 +13,7 @@
 #include <boost/simd/function/rec.hpp>
 #include <boost/simd/function/std.hpp>
 #include <boost/simd/meta/cardinal_of.hpp>
+#include <boost/simd/constant/nan.hpp>
 #include <simd_test.hpp>
 
 template <typename T, std::size_t N, typename Env>
@@ -42,4 +43,5 @@ STF_CASE_TPL("Check log on pack" , STF_IEEE_TYPES)
   test<T, N/2>($);
   test<T, N*2>($);
   test<T, N*4>($);
+  STF_IEEE_EQUAL(bs::musl_(bs::log)(p_t(-1)), bs::Nan<p_t>());
 }

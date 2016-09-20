@@ -59,31 +59,34 @@ namespace boost { namespace simd
     namespace bd =  boost::dispatch;
     namespace bs =  boost::simd;
 
-    template < class A0 >
-    struct logarithm< A0, tag::simd_type, double>
+    template < class A0, class Tag >
+    struct logarithm< A0, tag::simd_type, Tag, double>
     {
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
 
-      static BOOST_FORCEINLINE void kernel_log(const A0& a0,
+      static BOOST_FORCEINLINE void kernel_log(const musl_tag &,
+                                               const A0& a0,
                                                A0& dk,
                                                A0& hfsq,
                                                A0& s,
                                                A0& r,
                                                A0& f) BOOST_NOEXCEPT
       {
-        reduce(a0, dk, f);
+        using uiA0 = bd::as_integer_t<A0, unsigned>;
+        // reduce x into [sqrt(2)/2, sqrt(2)] */
+        uiA0 hx = bitwise_cast<uiA0>(a0) >> 32;
+        iA0 k(0);
+        hx += 0x3ff00000 - 0x3fe6a09e;
+        k += bitwise_cast<iA0>(hx>>20) - 0x3ff;
+        hx = (hx&0x000fffff) + 0x3fe6a09e;
+        A0 x = bitwise_cast<A0>(hx<<32 | (bitwise_and(0xffffffffull, bitwise_cast<uiA0>(a0))));
+        f = dec(x);
+        dk = tofloat(k);
+        //reduce(Tag(), a0, dk, f);
+        // compute approximation
         s = f/(Two<A0>()+f);
         A0 z = sqr(s);
-//       r =  horn<A0
-//         , 0x3FE5555555555593     //  6.666666666666735130e-01
-//         , 0x3FD999999997FA04     //  3.999999999940941908e-01
-//         , 0x3FD2492494229359     //  2.857142874366239149e-01
-//         , 0x3FCC71C51D8E78AF     //  2.222219843214978396e-01
-//         , 0x3FC7466496CB03DE     //  1.818357216161805012e-01
-//         , 0x3FC39A09D078C69F     //  1.531383769920937332e-01
-//         , 0x3FC2F112DF3E5244     //  1.479819860511658591e-01
-//         >(z)*z;
         A0 w = sqr(z);
         A0 t1= w*horn<A0,
           0x3fd999999997fa04ll,
@@ -100,33 +103,68 @@ namespace boost { namespace simd
         hfsq = (Half<A0>()* sqr(f));
       }
 
-      static BOOST_FORCEINLINE void reduce(const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
-      /* reduce x into [sqrt(2)/2, sqrt(2)] */
+      static BOOST_FORCEINLINE void kernel_log(const regular_tag &,
+                                               const A0& a0,
+                                               A0& dk,
+                                               A0& hfsq,
+                                               A0& s,
+                                               A0& r,
+                                               A0& f) BOOST_NOEXCEPT
       {
+        // reduce x into [sqrt(2)/2, sqrt(2)] */
         iA0 k;
         A0 x;
         std::tie(x, k) = fast_(frexp)(a0);
-//        iA0 x_lt_sqrthf = if_else_zero(is_greater(Sqrt_2o_2<A0>(), x),Mone<iA0>());
-//         k += x_lt_sqrthf;
         A0  x_lt_sqrthf = genmask(is_greater(Sqrt_2o_2<A0>(), x));
         k += bitwise_cast<iA0>(x_lt_sqrthf);
         f = dec(x+bitwise_and(x, x_lt_sqrthf));
         dk = tofloat(k);
-       }
+        // compute approximation
+        s = f/(Two<A0>()+f);
+        A0 z = sqr(s);
+        A0 w = sqr(z);
+        A0 t1= w*horn<A0,
+          0x3fd999999997fa04ll,
+          0x3fcc71c51d8e78afll,
+          0x3fc39a09d078c69fll
+          > (w);
+        A0 t2= z*horn<A0,
+          0x3fe5555555555593ll,
+          0x3fd2492494229359ll,
+          0x3fc7466496cb03dell,
+          0x3fc2f112df3e5244ll
+          > (w);
+        r = t2+t1;
+        hfsq = (Half<A0>()* sqr(f));
+      }
 
-      static BOOST_FORCEINLINE void reduce_musl(const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
-      /* reduce x into [sqrt(2)/2, sqrt(2)] */
-      {
-        using uiA0 = bd::as_integer_t<A0, unsigned>;
-        uiA0 hx = bitwise_cast<uiA0>(a0) >> 32;
-        iA0 k(0);
-        hx += 0x3ff00000 - 0x3fe6a09e;
-        k += bitwise_cast<iA0>(hx>>20) - 0x3ff;
-        hx = (hx&0x000fffff) + 0x3fe6a09e;
-        A0 x = bitwise_cast<A0>(hx<<32 | (bitwise_and(0xffffffffull, bitwise_cast<uiA0>(a0))));
-        f = dec(x);
-        dk = tofloat(k);
-       }
+
+
+//       static BOOST_FORCEINLINE void reduce(const regular_tag &, const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
+//       /* reduce x into [sqrt(2)/2, sqrt(2)] */
+//       {
+//         iA0 k;
+//         A0 x;
+//         std::tie(x, k) = fast_(frexp)(a0);
+//         A0  x_lt_sqrthf = genmask(is_greater(Sqrt_2o_2<A0>(), x));
+//         k += bitwise_cast<iA0>(x_lt_sqrthf);
+//         f = dec(x+bitwise_and(x, x_lt_sqrthf));
+//         dk = tofloat(k);
+//        }
+
+//       static BOOST_FORCEINLINE void reduce(const musl_tag &, const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
+//       /* reduce x into [sqrt(2)/2, sqrt(2)] */
+//       {
+//         using uiA0 = bd::as_integer_t<A0, unsigned>;
+//         uiA0 hx = bitwise_cast<uiA0>(a0) >> 32;
+//         iA0 k(0);
+//         hx += 0x3ff00000 - 0x3fe6a09e;
+//         k += bitwise_cast<iA0>(hx>>20) - 0x3ff;
+//         hx = (hx&0x000fffff) + 0x3fe6a09e;
+//         A0 x = bitwise_cast<A0>(hx<<32 | (bitwise_and(0xffffffffull, bitwise_cast<uiA0>(a0))));
+//         f = dec(x);
+//         dk = tofloat(k);
+//        }
 #ifndef BOOST_SIMD_NO_DENORMALS
       static BOOST_FORCEINLINE void denormal_prepare(A0& a0,  A0& t, A0 const & fac) BOOST_NOEXCEPT
       {
@@ -152,7 +190,7 @@ namespace boost { namespace simd
         denormal_prepare(a0, t, Mlogtwo2nmb<A0>() );
 #endif
         A0 dk, hfsq, s, R, f;
-        kernel_log(a0, dk, hfsq, s, R, f);
+        kernel_log(Tag(), a0, dk, hfsq, s, R, f);
         A0 y =     (dk* Log_2hi<A0>())- ((hfsq-(s*(hfsq+R)+(dk*Log_2lo<A0>())))-f);
 #ifndef BOOST_SIMD_NO_DENORMALS
         denormal_finalize(y, t);
@@ -168,7 +206,7 @@ namespace boost { namespace simd
         denormal_prepare(a0, t, Mlogtwo2nmb<A0>() );
 #endif
         A0 dk, hfsq, s, R, f;
-        kernel_log(a0, dk, hfsq, s, R, f);
+        kernel_log(Tag(), a0, dk, hfsq, s, R, f);
         A0 y = -(hfsq-(s*(hfsq+R))-f)*Invlog_2<A0>()+dk;
 #ifndef BOOST_SIMD_NO_DENORMALS
         denormal_finalize(y, t);
@@ -184,7 +222,7 @@ namespace boost { namespace simd
         denormal_prepare(a0, t, Mlogtwo2nmb<A0>() );
 #endif
         A0 dk, hfsq, s, R, f;
-        kernel_log(a0, dk, hfsq, s, R, f);
+        kernel_log(Tag(), a0, dk, hfsq, s, R, f);
         A0 y = -(hfsq-(s*(hfsq+R))-f)*Invlog_10<A0>()+dk*Log_2olog_10<A0>();
 #ifndef BOOST_SIMD_NO_DENORMALS
         denormal_finalize(y, t);
@@ -196,11 +234,12 @@ namespace boost { namespace simd
       static BOOST_FORCEINLINE A0 finalize(const A0 & a0, LA0 const & isnez, const A0& y) BOOST_NOEXCEPT
       {
 #ifndef BOOST_SIMD_NO_INFINITIES
-        return if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), y), Minf<A0>());
+        A0 z = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), y), Minf<A0>());
 #else
         boost::ignore_unused(a0);
-        return if_else(isnez, y, Minf<A0>());
+        A0 z = if_else(isnez, y, Minf<A0>());
 #endif
+        return if_nan_else(is_ltz(a0), z);
       }
     };
   }

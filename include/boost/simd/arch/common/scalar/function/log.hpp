@@ -38,6 +38,7 @@ namespace boost { namespace simd { namespace ext
       return std::log(a0);
     }
   };
+
   BOOST_DISPATCH_OVERLOAD ( log_
                           , (typename A0)
                           , bd::cpu_
@@ -46,7 +47,7 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() (A0 a0) const BOOST_NOEXCEPT
     {
-      return detail::logarithm<A0,tag::not_simd_type>::log(a0);
+      return detail::logarithm<A0,tag::not_simd_type, musl_tag>::log(a0);
     }
   };
 

@@ -12,6 +12,7 @@
 #include <boost/simd/function/log.hpp>
 #include <boost/simd/function/rec.hpp>
 #include <boost/simd/function/std.hpp>
+#include <boost/simd/constant/nan.hpp>
 #include <boost/simd/meta/cardinal_of.hpp>
 #include <simd_test.hpp>
 
@@ -43,4 +44,5 @@ STF_CASE_TPL("Check log on pack" , STF_IEEE_TYPES)
   test<T, N>($);
   test<T, N/2>($);
   test<T, N*2>($);
+  STF_IEEE_EQUAL(bs::log(p_t(-1)), bs::Nan<p_t>());
 }

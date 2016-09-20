@@ -55,6 +55,8 @@
 #include <boost/simd/function/tofloat.hpp>
 #include <boost/simd/detail/dispatch/meta/as_integer.hpp>
 #include <boost/simd/detail/dispatch/meta/scalar_of.hpp>
+#include <boost/simd/function/regular.hpp>
+#include <boost/simd/function/musl.hpp>
 
 namespace boost { namespace simd
 {
@@ -63,12 +65,13 @@ namespace boost { namespace simd
     namespace bd = boost::dispatch;
     template < class A0,
                class Style ,
+               class Tag = regular_tag,
                class base_A0 = bd::scalar_of_t<A0>
                >
                struct logarithm{};
 
-    template < class A0 >
-    struct logarithm< A0, tag::not_simd_type, float>
+    template < class A0, class Tag>
+    struct logarithm< A0, tag::not_simd_type, Tag, float>
     {
       using iA0 = bd::as_integer_t<A0,   signed>;
       using uiA0 = bd::as_integer_t<A0, unsigned>;
@@ -81,7 +84,7 @@ namespace boost { namespace simd
                                                A0& r,
                                                A0& f) BOOST_NOEXCEPT
       {
-        reduce_musl(a0, k, dk, f);
+        reduce(Tag(), a0, k, dk, f);
         s = f/(2.0f+f);
         A0 z = sqr(s);
         A0 w = sqr(z);
@@ -91,18 +94,20 @@ namespace boost { namespace simd
         hfsq = 0.5f*sqr(f);
       }
 
-//       static BOOST_FORCEINLINE void reduce(const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
-//       // reduce x into [sqrt(2)/2, sqrt(2)]
-//       {
-//         iA0 k;
-//         A0 x;
-//         std::tie(x, k) = fast_(frexp)(a0);
-//         A0  x_lt_sqrthf = genmask(is_greater(Sqrt_2o_2<A0>(), x));
-//         k += bitwise_cast<iA0>(x_lt_sqrthf);
-//         f = dec(x+bitwise_and(x, x_lt_sqrthf));
-//         dk = tofloat(k);
-//       }
-      static BOOST_FORCEINLINE void reduce_musl(const A0& a0, iA0 k, A0& dk, A0& f) BOOST_NOEXCEPT
+      //Up to now the regular way is never taken in scalar,  musl is speedier
+      static BOOST_FORCEINLINE void reduce(const regular_tag &, const A0& a0, A0& dk, A0& f) BOOST_NOEXCEPT
+      // reduce x into [sqrt(2)/2, sqrt(2)]
+      {
+        iA0 k;
+        A0 x;
+        std::tie(x, k) = fast_(frexp)(a0);
+        A0  x_lt_sqrthf = genmask(is_greater(Sqrt_2o_2<A0>(), x));
+        k += bitwise_cast<iA0>(x_lt_sqrthf);
+        f = dec(x+bitwise_and(x, x_lt_sqrthf));
+        dk = tofloat(k);
+      }
+
+      static BOOST_FORCEINLINE void reduce(const musl_tag &, const A0& a0, iA0 k, A0& dk, A0& f) BOOST_NOEXCEPT
       // reduce x into [sqrt(2)/2, sqrt(2)]
       {
         uiA0 ix = bitwise_cast<uiA0>(a0);
