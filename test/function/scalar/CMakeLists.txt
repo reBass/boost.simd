@@ -282,6 +282,7 @@ set ( SOURCES
    expx2.cpp
    log.cpp
    log.musl.cpp
+   log.regular.cpp
    log10.cpp
    log10.musl.cpp
    log1p.cpp

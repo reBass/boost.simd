@@ -29,10 +29,10 @@ int main(int argc, char* argv[])
   if(argc >= 2) mini = std::atof(argv[1]);
   if(argc >= 3) maxi = std::atof(argv[2]);
   bs::exhaustive_test<bs::pack<float>> ( mini
-                              , maxi
-                             , bs::log
-                              , raw_log()
-                              );
+                                       , maxi
+                                       , bs::regular_(bs::log)
+                                       , raw_log()
+                                       );
 
   return 0;
 }

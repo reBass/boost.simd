@@ -21,6 +21,7 @@ set(SOURCES
   fast_acos.cpp
   log.cpp
   log.musl.cpp
+  log.regular.cpp
   log1p.cpp
   log1p.musl.cpp
   log10.cpp

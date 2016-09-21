@@ -11,17 +11,39 @@
 #ifndef BOOST_SIMD_ARCH_COMMON_SIMD_FUNCTION_LOG_HPP_INCLUDED
 #define BOOST_SIMD_ARCH_COMMON_SIMD_FUNCTION_LOG_HPP_INCLUDED
 
-#include <boost/simd/arch/common/detail/scalar/logarithm.hpp>
-#include <boost/simd/arch/common/detail/tags.hpp>
-#include <boost/simd/arch/common/detail/simd/logarithm.hpp>
 #include <boost/simd/detail/dispatch/function/overload.hpp>
 #include <boost/config.hpp>
-#include <boost/simd/function/simd/is_lez.hpp>
-#include <boost/simd/function/simd/any.hpp>
+
+#include <boost/simd/function/any.hpp>
+#include <boost/simd/function/bitwise_and.hpp>
+#include <boost/simd/function/bitwise_cast.hpp>
+#include <boost/simd/function/dec.hpp>
+#include <boost/simd/function/fma.hpp>
+#include <boost/simd/function/frexp.hpp>
+#include <boost/simd/function/genmask.hpp>
+#include <boost/simd/function/horn.hpp>
+#include <boost/simd/function/if_else.hpp>
+#include <boost/simd/function/if_minus.hpp>
+#include <boost/simd/function/if_nan_else.hpp>
+#include <boost/simd/function/is_ltz.hpp>
+#include <boost/simd/function/is_nez.hpp>
 #include <boost/simd/function/musl.hpp>
-#include <boost/simd/function/std.hpp>
+#include <boost/simd/function/regular.hpp>
+#include <boost/simd/function/sqr.hpp>
+#include <boost/simd/function/tofloat.hpp>
+
+#include <boost/simd/constant/half.hpp>
+#include <boost/simd/constant/inf.hpp>
+#include <boost/simd/constant/minf.hpp>
+#include <boost/simd/constant/smallestposval.hpp>
+#include <boost/simd/constant/sqrt_2o_2.hpp>
+#include <boost/simd/constant/two.hpp>
+
 #include <boost/simd/detail/constant/log_2hi.hpp>
 #include <boost/simd/detail/constant/log_2lo.hpp>
+
+#include <boost/simd/detail/dispatch/meta/as_integer.hpp>
+
 
 namespace boost { namespace simd { namespace ext
 {
@@ -38,7 +60,7 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() (A0 const & a0) const BOOST_NOEXCEPT
     {
-      return detail::logarithm<A0,tag::simd_type,musl_tag>::log(a0);
+      return musl_(log)(a0);
     }
   };
 
@@ -51,7 +73,7 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() (A0 const & a0) const BOOST_NOEXCEPT
     {
-      return detail::logarithm<A0,tag::simd_type,regular_tag>::log(a0);
+      return musl_(log)(a0);
     }
   };
   BOOST_DISPATCH_OVERLOAD_IF ( log_
@@ -64,10 +86,9 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() (const musl_tag &, const A0& a0) const BOOST_NOEXCEPT
     {
-        /* |(log(1+s)-log(1-s))/s - Lg(s)| < 2**-34.24 (~[-4.95e-11, 4.97e-11]). */
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
-      A0 x =  if_nan_else(is_lez(a0), a0);
+      A0 x =  a0;
       iA0 k(0);
       auto isnez = is_nez(a0);
 #ifndef BOOST_SIMD_NO_DENORMALS
@@ -86,14 +107,8 @@ namespace boost { namespace simd { namespace ext
       ix = (ix&0x007fffff) + 0x3f3504f3;
       x =  bitwise_cast<A0>(ix);
       A0 f = dec(x);
-      A0 s = f/(2.0f + f);
+      A0 s = f/(Two<A0>() + f);
       A0 z = sqr(s);
-//       A0 R =  horn<A0
-//         , 0x3f2aaaaa  //  0.66666662693 0xaaaaaa.0p-24
-//         , 0x3eccce13  //  0.40000972152 0xccce13.0p-25
-//         , 0x3e91e9ee  //  0.28498786688 0x91e9ee.0p-25
-//         , 0x3e789e26  //  0.24279078841 0xf89e26.0p-26
-//         >(z)*z;
       A0 w = sqr(z);
       A0 t1= w*horn<A0, 0x3eccce13, 0x3e789e26>(w);
       A0 t2= z*horn<A0, 0x3f2aaaaa, 0x3e91e9ee>(w);
@@ -123,7 +138,7 @@ namespace boost { namespace simd { namespace ext
     {
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
-      A0 x =  if_nan_else(is_lez(a0), a0);
+      A0 x = a0;
       uiA0 hx = bitwise_cast<uiA0>(x) >> 32;
       iA0 k(0);
       auto isnez = is_nez(a0);
@@ -145,7 +160,7 @@ namespace boost { namespace simd { namespace ext
 
       A0 f = dec(x);
       A0 hfsq = Half<A0>()*sqr(f);
-      A0 s = f/(2.0f + f);
+      A0 s = f/(Two<A0>() + f);
       A0 z = sqr(s);
       A0 w = sqr(z);
       A0 t1= w*horn<A0,
@@ -160,6 +175,108 @@ namespace boost { namespace simd { namespace ext
                     0x3fc2f112df3e5244ll
                     > (w);
       A0 R = t2+t1;
+      A0 r = fma(s, (hfsq+R), fma(dk, Log_2lo<A0>(), - hfsq + f + dk*Log_2hi<A0>()));
+#ifndef BOOST_SIMD_NO_INFINITIES
+      A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
+#else
+      A0 zz = if_else(isnez, r, Minf<A0>());
+#endif
+      return if_nan_else(is_ltz(a0), zz);
+    }
+  };
+
+  BOOST_DISPATCH_OVERLOAD_IF ( log_
+                          , (typename A0, typename X)
+                          , (detail::is_native<X>)
+                          , bd::cpu_
+                          , bs::regular_tag
+                          , bs::pack_< bd::single_<A0>, X>
+                          )
+  {
+    BOOST_FORCEINLINE A0 operator() (const regular_tag &, const A0& a0) const BOOST_NOEXCEPT
+    {
+      using iA0 = bd::as_integer_t<A0,   signed>;
+      A0 x =  a0;
+      iA0 k(0);
+      auto isnez = is_nez(a0);
+#ifndef BOOST_SIMD_NO_DENORMALS
+      auto test = is_less(a0, Smallestposval<A0>())&&isnez;
+      if (any(test))
+      {
+        k = if_minus(test, k, iA0(23));
+        x = if_else(test, x*A0(0x1p23f), x);
+      }
+#endif
+      iA0 kk;
+      std::tie(x, kk) = fast_(frexp)(x);
+      A0  x_lt_sqrthf = genmask(Sqrt_2o_2<A0>() > x);
+      k += kk+bitwise_cast<iA0>(x_lt_sqrthf);
+      A0 f = dec(x+bitwise_and(x, x_lt_sqrthf));
+      A0 dk = tofloat(k);
+      A0 s = f/(Two<A0>() + f);
+      A0 z = sqr(s);
+      A0 w = sqr(z);
+      A0 t1= w*horn<A0, 0x3eccce13, 0x3e789e26>(w);
+      A0 t2= z*horn<A0, 0x3f2aaaaa, 0x3e91e9ee>(w);
+      A0 R = t2 + t1;
+
+      A0 hfsq = Half<A0>()*sqr(f);
+      A0 r = fma(s, (hfsq+R), dk*Log_2lo<A0>() - hfsq + f + dk*Log_2hi<A0>());
+#ifndef BOOST_SIMD_NO_INFINITIES
+      A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
+#else
+      A0 zz = if_else(isnez, r, Minf<A0>());
+#endif
+      return if_nan_else(is_ltz(a0), zz);
+    }
+  };
+
+  BOOST_DISPATCH_OVERLOAD_IF ( log_
+                             , (typename A0, typename X)
+                             , (detail::is_native<X>)
+                             , bd::cpu_
+                             , bs::regular_tag
+                             , bs::pack_< bd::double_<A0>, X>
+                             )
+  {
+    BOOST_FORCEINLINE A0 operator() (const regular_tag &, const A0& a0) const BOOST_NOEXCEPT
+    {
+//      using uiA0 = bd::as_integer_t<A0, unsigned>;
+      using iA0 = bd::as_integer_t<A0,   signed>;
+      A0 x =  a0;
+      iA0 k(0);
+      auto isnez = is_nez(a0);
+#ifndef BOOST_SIMD_NO_DENORMALS
+      auto test = is_less(a0, Smallestposval<A0>())&&isnez;
+      if (any(test))
+      {
+        k = if_minus(test, k, iA0(23));
+        x = if_else(test, x*A0(0x1p23f), x);
+      }
+#endif
+      iA0 kk;
+      std::tie(x, kk) = fast_(frexp)(x);
+      A0  x_lt_sqrthf = genmask(Sqrt_2o_2<A0>() >  x);
+      k += kk+bitwise_cast<iA0>(x_lt_sqrthf);
+      A0 f = dec(x+bitwise_and(x, x_lt_sqrthf));
+      A0 dk = tofloat(k);
+      // compute approximation
+      A0 s = f/(Two<A0>()+f);
+      A0 z = sqr(s);
+      A0 w = sqr(z);
+      A0 t1= w*horn<A0,
+        0x3fd999999997fa04ll,
+        0x3fcc71c51d8e78afll,
+        0x3fc39a09d078c69fll
+        > (w);
+      A0 t2= z*horn<A0,
+        0x3fe5555555555593ll,
+        0x3fd2492494229359ll,
+        0x3fc7466496cb03dell,
+        0x3fc2f112df3e5244ll
+        > (w);
+      A0 R = t2+t1;
+      A0 hfsq = Half<A0>()* sqr(f);
       A0 r = fma(s, (hfsq+R), fma(dk, Log_2lo<A0>(), - hfsq + f + dk*Log_2hi<A0>()));
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());

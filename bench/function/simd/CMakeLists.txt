@@ -207,6 +207,7 @@ set(SOURCES
     log2.musl.cpp
     log.cpp
     log.musl.cpp
+    log.regular.cpp
     logical_and.cpp
     logical_andnot.cpp
     logical_notand.cpp
