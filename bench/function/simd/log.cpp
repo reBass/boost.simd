@@ -5,6 +5,7 @@
 //                        See accompanying file LICENSE.txt or copy at
 //                            http://www.boost.org/LICENSE_1_0.txt
 // -------------------------------------------------------------------------------------------------
+//#define BOOST_SIMD_TAG_DEBUG
 #define BOOST_SIMD_NO_DENORMALS
 #define BOOST_SIMD_NO_INVALIDS
 #include <simd_bench.hpp>

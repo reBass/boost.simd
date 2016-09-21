@@ -28,6 +28,7 @@ namespace boost { namespace simd { namespace ext
   namespace bd = boost::dispatch;
   namespace bs = boost::simd;
 
+
   BOOST_DISPATCH_OVERLOAD_IF ( log_
                           , (typename A0, typename X)
                           , (detail::is_native<X>)

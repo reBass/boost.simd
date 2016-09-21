@@ -10,6 +10,8 @@
 #ifndef BOOST_SIMD_ARCH_COMMON_DETAIL_SIMD_F_LOG_HPP_INCLUDED
 #define BOOST_SIMD_ARCH_COMMON_DETAIL_SIMD_F_LOG_HPP_INCLUDED
 
+#include <boost/simd/arch/common/detail/version.hpp>
+
 #include <boost/simd/function/any.hpp>
 #include <boost/simd/function/dec.hpp>
 #include <boost/simd/function/fma.hpp>
@@ -82,7 +84,6 @@ namespace boost { namespace simd
                                                A0& r,
                                                A0& f) BOOST_NOEXCEPT
       {
-        //       A0 a0 =  if_nan_else(is_ltz(a00), a00);
         // reduce x into [sqrt(2)/2, sqrt(2)]
         iA0 k;
         A0 x;
@@ -109,7 +110,6 @@ namespace boost { namespace simd
                                                A0& r,
                                                A0& f) BOOST_NOEXCEPT
       {
-//        A0 a0 =  if_nan_else(is_ltz(a00), a00);
         // reduce x into [sqrt(2)/2, sqrt(2)]
         using uiA0 = bd::as_integer_t<A0, unsigned>;
         uiA0 ix = bitwise_cast<uiA0>(a0);
@@ -170,8 +170,9 @@ namespace boost { namespace simd
       }
 #endif
 
-      static BOOST_FORCEINLINE A0 log(A0 a0) BOOST_NOEXCEPT
+      static BOOST_FORCEINLINE A0 log(const A0& a0) BOOST_NOEXCEPT
       {
+        VERSION(A0, Tag);
         auto isnez = is_nez(a0);
 #ifndef BOOST_SIMD_NO_DENORMALS
         A0 t(0);
@@ -186,7 +187,7 @@ namespace boost { namespace simd
         return finalize(a0, isnez, y);
       }
 
-      static BOOST_FORCEINLINE A0 log2(A0 a0) BOOST_NOEXCEPT
+      static BOOST_FORCEINLINE A0 log2(const A0& a0) BOOST_NOEXCEPT
       {
         auto isnez = is_nez(a0);
 #ifndef BOOST_SIMD_NO_DENORMALS
@@ -202,7 +203,7 @@ namespace boost { namespace simd
         return finalize(a0, isnez, y);
       }
 
-      static BOOST_FORCEINLINE A0 log10(A0 a0) BOOST_NOEXCEPT
+      static BOOST_FORCEINLINE A0 log10(const A0& a0) BOOST_NOEXCEPT
       {
         auto isnez = is_nez(a0);
 #ifndef BOOST_SIMD_NO_DENORMALS
