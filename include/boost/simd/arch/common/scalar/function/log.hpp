@@ -185,7 +185,7 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() (const regular_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      return musl_(log)(a0); //the "regular" version of the algorithm is never speedier than the "musl" version.
+      return musl_(log)(x); //the "regular" version of the algorithm is never speedier than the "musl" version.
       // the call is here to allow a scalar fallback of simd calls
     }
   };
