@@ -43,8 +43,8 @@
 #include <boost/simd/constant/smallestposval.hpp>
 #include <boost/simd/constant/sqrt_2o_2.hpp>
 
-// #include <boost/simd/detail/constant/invlog_2hi.hpp>
-// #include <boost/simd/detail/constant/invlog_2lo.hpp>
+#include <boost/simd/detail/constant/invlog_2hi.hpp>
+#include <boost/simd/detail/constant/invlog_2lo.hpp>
 
 #include <boost/simd/detail/dispatch/meta/as_integer.hpp>
 
@@ -147,13 +147,10 @@ namespace boost { namespace simd { namespace ext
       // a 0.5 ulp maximal error on the full range.
       // Moreover all log2(exp2(i)) i =  1..31 are flint
       // I leave the code here in case an exotic proc will not play the game.
-      //      const A0
-      //         ivln2hi =  1.4428710938e+00, // 0x3fb8b000
-      //         ivln2lo = -1.7605285393e-04, // 0xb9389ad4
       //       A0  hi = f - hfsq;
       //       hi =  bitwise_and(hi, uiA0(0xfffff000ul));
       //       A0  lo = fma(s, hfsq+R, f - hi - hfsq);
-      //       A0 r = (lo+hi)*ivln2lo + lo*ivln2hi + hi*ivln2hi + k;
+      //       A0 r = (lo+hi)*detail::Invlog_2lo<A0>() + lo*detail::Invlog_2hi<A0>() + hi*detail::Invlog_2hi<A0>() + k;
 
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
@@ -185,9 +182,6 @@ namespace boost { namespace simd { namespace ext
      * is preserved.
      * ====================================================
      */
-      const A0
-        ivln2hi(1.44269504072144627571e+00), /* 0x3ff71547, 0x65200000 */
-        ivln2lo(1.67517131648865118353e-10); /* 0x3de705fc, 0x2eefa200 */
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       A0 x =  a0;
@@ -256,8 +250,8 @@ namespace boost { namespace simd { namespace ext
       hi =  bitwise_and(hi, (Allbits<uiA0>() << 32));
       A0 lo = fma(s, hfsq+R, f - hi - hfsq);
 
-      A0 val_hi = hi*ivln2hi;
-      A0 val_lo = fma(lo+hi, ivln2lo, lo*ivln2hi);
+      A0 val_hi = hi*Invlog_2hi<A0>();
+      A0 val_lo = fma(lo+hi, Invlog_2lo<A0>(), lo*Invlog_2hi<A0>());
 
       A0 dk = tofloat(k);
       A0 w1 = dk + val_hi;
@@ -328,13 +322,10 @@ namespace boost { namespace simd { namespace ext
       // a 0.5 ulp maximal error on the full range.
       // Moreover all log2(exp2(i)) i =  1..31 are flint
       // I leave the code here in case an exotic proc will not play the game.
-      //      const A0
-      //         ivln2hi =  1.4428710938e+00, // 0x3fb8b000
-      //         ivln2lo = -1.7605285393e-04, // 0xb9389ad4
       //       A0  hi = f - hfsq;
       //       hi =  bitwise_and(hi, uiA0(0xfffff000ul));
       //       A0  lo = fma(s, hfsq+R, f - hi - hfsq);
-      //       A0 r = (lo+hi)*ivln2lo + lo*ivln2hi + hi*ivln2hi + k;
+      //       A0 r = (lo+hi)*Invlog_2lo<A0>() + lo*Invlog_2hi<A0>() + hi*Invlog_2hi<A0>() + k;
 
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
@@ -366,9 +357,6 @@ namespace boost { namespace simd { namespace ext
        * is preserved.
        * ====================================================
        */
-      const A0
-        ivln2hi(1.44269504072144627571e+00), /* 0x3ff71547, 0x65200000 */
-        ivln2lo(1.67517131648865118353e-10); /* 0x3de705fc, 0x2eefa200 */
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       A0 x =  a0;
@@ -438,8 +426,8 @@ namespace boost { namespace simd { namespace ext
       hi =  bitwise_and(hi, (Allbits<uiA0>() << 32));
       A0 lo = fma(s, hfsq+R, f - hi - hfsq);
 
-      A0 val_hi = hi*ivln2hi;
-      A0 val_lo = fma(lo+hi, ivln2lo, lo*ivln2hi);
+      A0 val_hi = hi*Invlog_2hi<A0>();
+      A0 val_lo = fma(lo+hi, Invlog_2lo<A0>(), lo*Invlog_2hi<A0>());
 
       A0 w1 = dk + val_hi;
       val_lo += (dk - w1) + val_hi;

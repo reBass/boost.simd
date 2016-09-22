@@ -36,8 +36,8 @@
 #include <boost/simd/constant/smallestposval.hpp>
 #include <boost/simd/constant/sqrt_2o_2.hpp>
 
-// #include <boost/simd/detail/constant/invlog_2hi.hpp>
-// #include <boost/simd/detail/constant/invlog_2lo.hpp>
+#include <boost/simd/detail/constant/invlog_2hi.hpp>
+#include <boost/simd/detail/constant/invlog_2lo.hpp>
 
 #include <boost/simd/detail/dispatch/meta/as_integer.hpp>
 
@@ -190,9 +190,9 @@ namespace boost { namespace simd { namespace ext
      */
     BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      const A0
-        ivln2hi = 1.44269504072144627571e+00, /* 0x3ff71547, 0x65200000 */
-        ivln2lo = 1.67517131648865118353e-10; /* 0x3de705fc, 0x2eefa200 */
+//       const A0
+//         ivln2hi = 1.44269504072144627571e+00, /* 0x3ff71547, 0x65200000 */
+//         ivln2lo = 1.67517131648865118353e-10; /* 0x3de705fc, 0x2eefa200 */
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       uiA0 hx = bitwise_cast<uiA0>(x) >> 32;
@@ -269,8 +269,8 @@ namespace boost { namespace simd { namespace ext
       hi =  bitwise_and(hi, (Allbits<uiA0>() << 32));
       A0 lo = f - hi - hfsq + s*(hfsq+R);
 
-      A0 val_hi = hi*ivln2hi;
-      A0 val_lo = fma(lo+hi, ivln2lo, lo*ivln2hi);
+      A0 val_hi = hi*Invlog_2hi<A0>();
+      A0 val_lo = fma(lo+hi, Invlog_2lo<A0>(), lo*Invlog_2hi<A0>());
 
       A0 dk = k;
       A0 w1 = dk + val_hi;
