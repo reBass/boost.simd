@@ -17,6 +17,7 @@
 #include <boost/simd/constant/mone.hpp>
 #include <boost/simd/constant/zero.hpp>
 #include <boost/simd/constant/mzero.hpp>
+#include <boost/simd/constant/valmax.hpp>
 
 STF_CASE_TPL (" log2",  STF_IEEE_TYPES)
 {
@@ -41,6 +42,12 @@ STF_CASE_TPL (" log2",  STF_IEEE_TYPES)
   STF_ULP_EQUAL(log2(T(2)), T(1), 0);
   STF_ULP_EQUAL(log2(T(8)), T(3), 0);
   STF_ULP_EQUAL(log2(T(64)), T(6), 0);
+  T j = 1;
+  for(unsigned int i=0; i < (unsigned int)bs::log2(bs::Valmax<T>()) ; ++i)
+  {
+    STF_ULP_EQUAL(log2(j), T(i), 0);
+    j *= T(2);
+  }
 }
 
 STF_CASE_TPL (" log2int",  STF_INTEGRAL_TYPES)

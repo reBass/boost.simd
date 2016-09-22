@@ -28,6 +28,7 @@ set(SOURCES
   log10.musl.cpp
   log2.cpp
   log2.musl.cpp
+  log2.regular.cpp
   nthroot.cpp
  )
 

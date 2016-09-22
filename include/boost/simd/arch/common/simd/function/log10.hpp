@@ -11,8 +11,8 @@
 #ifndef BOOST_SIMD_ARCH_COMMON_SIMD_FUNCTION_LOG10_HPP_INCLUDED
 #define BOOST_SIMD_ARCH_COMMON_SIMD_FUNCTION_LOG10_HPP_INCLUDED
 
-#include <boost/simd/arch/common/detail/scalar/logarithm.hpp>
-#include <boost/simd/arch/common/detail/simd/logarithm.hpp>
+// #include <boost/simd/arch/common/detail/scalar/logarithm.hpp>
+// #include <boost/simd/arch/common/detail/simd/logarithm.hpp>
 #include <boost/simd/detail/assert_utils.hpp>
 #include <boost/simd/function/simd/is_not_nan.hpp>
 #include <boost/simd/function/simd/is_positive.hpp>
@@ -35,7 +35,7 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() ( A0 const& a0) const BOOST_NOEXCEPT
     {
-      return detail::logarithm<A0,tag::simd_type>::log10(a0);
+      return musl_(log10)(a0); //detail::logarithm<A0,tag::simd_type>::log10(a0);
     }
   };
 

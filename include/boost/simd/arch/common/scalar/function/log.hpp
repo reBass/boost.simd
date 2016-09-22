@@ -18,7 +18,7 @@
 #include <boost/assert.hpp>
 #include <boost/config.hpp>
 #include <cmath>
-#include <boost/simd/function/scalar/bitwise_and.hpp>
+#include <boost/simd/function/bitwise_and.hpp>
 #include <boost/simd/function/dec.hpp>
 #include <boost/simd/function/fma.hpp>
 #include <boost/simd/function/frexp.hpp>
@@ -76,7 +76,18 @@ namespace boost { namespace simd { namespace ext
                           , bd::scalar_< bd::single_<A0> >
                           )
   {
-    BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
+  /* origin: FreeBSD /usr/src/lib/msun/src/e_log2f.c */
+  /*
+   * ====================================================
+   * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+   *
+   * Developed at SunPro, a Sun Microsystems, Inc. business.
+   * Permission to use, copy, modify, and distribute this
+   * software is freely granted, provided that this notice
+   * is preserved.
+   * ====================================================
+   */
+     BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
@@ -113,7 +124,8 @@ namespace boost { namespace simd { namespace ext
       A0 t2= z*horn<A0, 0x3f2aaaaa, 0x3e91e9ee>(w);
       A0 R = t2 + t1;
       A0 hfsq = 0.5f*sqr(f);
-      return fma(s, (hfsq+R), k*Log_2lo<A0>() - hfsq + f + k*Log_2hi<A0>());
+      A0 dk = k;
+      return  fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()) - hfsq) + f));
     }
   };
 
@@ -159,20 +171,12 @@ namespace boost { namespace simd { namespace ext
       A0 s = f/(2.0f + f);
       A0 z = sqr(s);
       A0 w = sqr(z);
-      A0 t1= w*horn<A0,
-        0x3fd999999997fa04ll,
-        0x3fcc71c51d8e78afll,
-        0x3fc39a09d078c69fll
-        > (w);
-      A0 t2= z*horn<A0,
-        0x3fe5555555555593ll,
-        0x3fd2492494229359ll,
-        0x3fc7466496cb03dell,
-        0x3fc2f112df3e5244ll
-        > (w);
+      A0 t1= w*horn<A0, 0x3fd999999997fa04ll, 0x3fcc71c51d8e78afll, 0x3fc39a09d078c69fll > (w);
+      A0 t2= z*horn<A0, 0x3fe5555555555593ll, 0x3fd2492494229359ll
+                      , 0x3fc7466496cb03dell, 0x3fc2f112df3e5244ll> (w);
       A0 R = t2 + t1;
       A0 dk = k;
-      return fma(s, (hfsq+R), dk*Log_2lo<A0>() - hfsq + f + dk*Log_2hi<A0>());
+      return  fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()) - hfsq) + f));
     }
   };
 
@@ -186,7 +190,7 @@ namespace boost { namespace simd { namespace ext
     BOOST_FORCEINLINE A0 operator() (const regular_tag &, A0 x) const BOOST_NOEXCEPT
     {
       return musl_(log)(x); //the "regular" version of the algorithm is never speedier than the "musl" version.
-      // the call is here to allow a scalar fallback of simd calls
+      // the call is here to allow a scalar fallback to simd calls
     }
   };
 

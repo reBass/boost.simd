@@ -19,6 +19,7 @@
 #include <boost/simd/constant/mzero.hpp>
 #include <boost/simd/constant/ten.hpp>
 #include <boost/simd/constant/three.hpp>
+#include <boost/simd/constant/valmax.hpp>
 
 STF_CASE_TPL (" log10", STF_IEEE_TYPES)
 {
@@ -42,6 +43,12 @@ STF_CASE_TPL (" log10", STF_IEEE_TYPES)
   STF_ULP_EQUAL(log10(bs::One<T>()), bs::Zero<r_t>(), 0);
   STF_ULP_EQUAL(log10(bs::Two<T>()), T(0.301029995663981195213738894724), 0);
   STF_ULP_EQUAL(log10(bs::Three<T>()),T(0.477121254719662437295027903255), 0.5);
+  T j = 1;
+  for(unsigned int i=0; i < (unsigned int)bs::log10(bs::Valmax<T>()) ; ++i)
+  {
+    STF_ULP_EQUAL(log10(j), T(i), 0);
+    j *= T(10);
+  }
 }
 
 STF_CASE_TPL (" log10 uint8",  (uint8_t))

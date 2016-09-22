@@ -37,7 +37,7 @@ STF_CASE_TPL (" log10", STF_IEEE_TYPES)
   STF_ULP_EQUAL(bs::musl_(log10)(bs::Nan<T>()), bs::Nan<r_t>(), 0);
   STF_ULP_EQUAL(bs::musl_(log10)(bs::Mone<T>()), bs::Nan<r_t>(), 0);
   STF_ULP_EQUAL(bs::musl_(log10)(bs::Zero<T>()), bs::Minf<r_t>(), 0);
-  STF_ULP_EQUAL(bs::std_(bs::musl_(log10))(bs::Mzero<T>()), bs::Minf<r_t>(), 0);
+  STF_ULP_EQUAL(bs::musl_(log10)(bs::Mzero<T>()), bs::Minf<r_t>(), 0);
 #endif
   STF_ULP_EQUAL(bs::musl_(log10)(bs::One<T>()), bs::Zero<r_t>(), 0);
   STF_ULP_EQUAL(bs::musl_(log10)(bs::Two<T>()), T(0.301029995663981195213738894724), 0);

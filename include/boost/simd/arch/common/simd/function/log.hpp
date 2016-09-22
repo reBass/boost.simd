@@ -116,7 +116,7 @@ namespace boost { namespace simd { namespace ext
 
       A0 hfsq = Half<A0>()*sqr(f);
       A0 dk = tofloat(k);
-      A0 r = fma(s, (hfsq+R), dk*Log_2lo<A0>() - hfsq + f + dk*Log_2hi<A0>());
+      A0 r = fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()) - hfsq) + f));
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
 #else
@@ -175,7 +175,7 @@ namespace boost { namespace simd { namespace ext
                     0x3fc2f112df3e5244ll
                     > (w);
       A0 R = t2+t1;
-      A0 r = fma(s, (hfsq+R), fma(dk, Log_2lo<A0>(), - hfsq + f + dk*Log_2hi<A0>()));
+      A0 r = fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()) - hfsq) + f));
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
 #else
@@ -221,7 +221,7 @@ namespace boost { namespace simd { namespace ext
       A0 R = t2 + t1;
 
       A0 hfsq = Half<A0>()*sqr(f);
-      A0 r = fma(s, (hfsq+R), dk*Log_2lo<A0>() - hfsq + f + dk*Log_2hi<A0>());
+      A0 r = fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()) - hfsq) + f));
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
 #else
@@ -277,7 +277,7 @@ namespace boost { namespace simd { namespace ext
         > (w);
       A0 R = t2+t1;
       A0 hfsq = Half<A0>()* sqr(f);
-      A0 r = fma(s, (hfsq+R), fma(dk, Log_2lo<A0>(), - hfsq + f + dk*Log_2hi<A0>()));
+      A0 r = fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()) - hfsq) + f));
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
 #else

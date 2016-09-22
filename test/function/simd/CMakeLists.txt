@@ -224,6 +224,7 @@ log1p.cpp
 log1p.musl.cpp
 log2.cpp
 log2.musl.cpp
+log2.regular.cpp
 logical_and.cpp
 logical_andnot.cpp
 logical_notand.cpp
