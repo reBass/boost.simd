@@ -18,14 +18,14 @@ namespace boost { namespace simd { namespace ext
 
    BOOST_DISPATCH_OVERLOAD_IF( log10_
                              , (typename A0)
-                             , (detail::is_native<X>)
+                             , (detail::is_native<bs::avx_>)
                              , bs::avx_
                              , bs::pack_<bd::double_<A0>, bs::avx_>
                           )
    {
       BOOST_FORCEINLINE A0 operator()( const A0& a0) const BOOST_NOEXCEPT
       {
-        return regular_(log10)(a0)
+        return regular_(log10)(a0);
       }
    };
 

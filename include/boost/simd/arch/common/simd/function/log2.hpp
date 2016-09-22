@@ -57,12 +57,24 @@ namespace boost { namespace simd { namespace ext
                           , (typename A0,typename X)
                           , (detail::is_native<X>)
                           , bd::cpu_
-                          , bs::pack_< bd::floating_<A0>, X>
+                          , bs::pack_< bd::single_<A0>, X>
                           )
   {
     BOOST_FORCEINLINE A0 operator() (A0 const& a0) const BOOST_NOEXCEPT
     {
-      return musl_(log2)(a0); //detail::logarithm<musl_tag, A0,tag::simd_type>::log2(a0);
+      return musl_(log2)(a0);
+    }
+  };
+  BOOST_DISPATCH_OVERLOAD_IF ( log2_
+                          , (typename A0,typename X)
+                          , (detail::is_native<X>)
+                          , bd::cpu_
+                          , bs::pack_< bd::double_<A0>, X>
+                          )
+  {
+    BOOST_FORCEINLINE A0 operator() (A0 const& a0) const BOOST_NOEXCEPT
+    {
+      return musl_(log2)(a0);
     }
   };
 

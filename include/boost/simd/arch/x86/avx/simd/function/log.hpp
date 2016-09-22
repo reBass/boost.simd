@@ -10,6 +10,7 @@
 #define BOOST_SIMD_ARCH_X86_AVX_SIMD_FUNCTION_LOG_HPP_INCLUDED
 
 #include <boost/simd/detail/overload.hpp>
+#include <boost/config.hpp>
 
 namespace boost { namespace simd { namespace ext
 {
@@ -18,14 +19,14 @@ namespace boost { namespace simd { namespace ext
 
    BOOST_DISPATCH_OVERLOAD_IF( log_
                              , (typename A0)
-                             , (detail::is_native<X>)
+                             , (detail::is_native<bs::avx_>)
                              , bs::avx_
                              , bs::pack_<bd::double_<A0>, bs::avx_>
                           )
    {
       BOOST_FORCEINLINE A0 operator()( const A0& a0) const BOOST_NOEXCEPT
       {
-        return regular_(log)(a0)
+        return regular_(log)(a0);
       }
    };
 
