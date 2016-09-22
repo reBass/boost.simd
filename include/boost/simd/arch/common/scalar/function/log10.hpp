@@ -12,8 +12,6 @@
 #define BOOST_SIMD_ARCH_COMMON_SCALAR_FUNCTION_LOG10_HPP_INCLUDED
 #include <boost/simd/function/std.hpp>
 
-
-//#include <boost/simd/arch/common/detail/scalar/logarithm.hpp>
 #include <boost/simd/function/log.hpp>
 #include <boost/simd/arch/common/detail/tags.hpp>
 #include <boost/simd/detail/dispatch/function/overload.hpp>
@@ -182,7 +180,7 @@ namespace boost { namespace simd { namespace ext
         ivln10hi  =  4.3432617188e-01, /* 0x3ede6000 */
         ivln10lo  = -3.1689971365e-05, /* 0xb804ead9 */
         log10_2hi =  3.0102920532e-01, /* 0x3e9a2080 */
-        log10_2lo =  7.9034151668e-07, /* 0x355427db */
+        log10_2lo =  7.9034151668e-07; /* 0x355427db */
         using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       uiA0 ix = bitwise_cast<uiA0>(x);
