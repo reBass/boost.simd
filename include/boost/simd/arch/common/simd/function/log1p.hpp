@@ -13,12 +13,13 @@
 #include <boost/simd/detail/overload.hpp>
 
 #include <boost/simd/meta/hierarchy/simd.hpp>
-#include <boost/simd/function/simd/is_nez.hpp>
-#include <boost/simd/function/simd/log.hpp>
-#include <boost/simd/function/simd/dec.hpp>
-#include <boost/simd/function/simd/inc.hpp>
-#include <boost/simd/function/simd/if_plus.hpp>
-#include <boost/simd/function/simd/if_zero_else.hpp>
+#include <boost/simd/function/is_nez.hpp>
+#include <boost/simd/function/log.hpp>
+#include <boost/simd/function/dec.hpp>
+#include <boost/simd/function/inc.hpp>
+#include <boost/simd/function/if_plus.hpp>
+#include <boost/simd/function/if_zero_else.hpp>
+#include <boost/simd/function/is_lez.hpp>
 
 #ifndef BOOST_SIMD_NO_INFINITIES
 #include <boost/simd/constant/inf.hpp>

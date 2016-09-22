@@ -126,7 +126,7 @@ namespace boost { namespace simd { namespace ext
       A0 t1= w*fma(w, Lg4, Lg2); //w*(Lg2+w*Lg4);
       A0 t2= z*fma(w, Lg3, Lg1); //z*(Lg1+w*Lg3);
       A0 R = t2 + t1;
-      A0 hfsq = Half<A0>()*sqr(f);
+      A0 hfsq = 0.5f*sqr(f);
       A0 dk = k;
       return fma(s, hfsq+R,  fma(dk, ln2_lo, c) - hfsq + f + dk*ln2_hi);
     }
@@ -192,7 +192,7 @@ namespace boost { namespace simd { namespace ext
         f = dec(f);
       }
 
-      A0 hfsq = Half<A0>()*sqr(f);
+      A0 hfsq = 0.5*sqr(f);
       A0 s = f/(2.0f + f);
       A0 z = sqr(s);
       A0 w = sqr(z);
