@@ -68,67 +68,55 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      const A0
-        ln2_hi = 6.9313812256e-01, /* 0x3f317180 */
-        ln2_lo = 9.0580006145e-06, /* 0x3717f7d1 */
-        /* |(log(1+s)-log(1-s))/s - Lg(s)| < 2**-34.24 (~[-4.95e-11, 4.97e-11]). */
-        Lg1 =0.66666662693, /*   0xaaaaaa.0p-24*/
-        Lg2 =0.40000972152, /*   0xccce13.0p-25*/
-        Lg3 =0.28498786688, /*   0x91e9ee.0p-25*/
-        Lg4 =0.24279078841; /*   0xf89e26.0p-26*/
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       uiA0 ix = bitwise_cast<uiA0>(x);
       iA0 k = 1;
       A0 c = Zero<A0>(), f = x;
-      if (ix < 0x3ed413d0 || ix>>31) {  /* 1+x < sqrt(2)+  */
-        if (ix >= 0xbf800000) {  /* x <= -1.0 */
-          if (x == Mone<A0>())
-            return Minf<A0>();  /* log1p(-1)=-inf */
-          return Nan<A0>();     /* log1p(x<-1)=NaN */
+      if (ix < 0x3ed413d0 || ix>>31)               /* 1+x < sqrt(2)+  */
+      {
+        if (ix >= 0xbf800000)                       /* x <= -1.0 */
+        {
+          if (x == Mone<A0>())  return Minf<A0>();  /* log1p(-1)=-inf */
+          return Nan<A0>();                         /* log1p(x<-1)=NaN */
         }
-        if (ix<<1 < 0x33800000<<1) {   /* |x| < 2**-24 */
-          /* underflow if subnormal */
+        if (ix<<1 < 0x33800000<<1)                  /* |x| < 2**-24 */
+        {
           if ((ix&0x7f800000) == 0) return x;
         }
-        if (ix <= 0xbe95f619) { /* sqrt(2)/2- <= 1+x < sqrt(2)+ */
+        if (ix <= 0xbe95f619)                       /* sqrt(2)/2- <= 1+x < sqrt(2)+ */
+        {
           k = 0;
-          // c = Zero<A0>();
-          // f = x;
         }
-      } else if (ix >= 0x7f800000)
-        return x;
-//       std::cout << "ix      " << ix<< std::endl;
-//       std::cout << "avant k " << k << std::endl;
-      if (k) {
+      }
+      else if (ix >= 0x7f800000)  return x;
+      if (k)
+      {
+        /* reduce u into [sqrt(2)/2, sqrt(2)] */
         A0 uf =  inc(x);
         uiA0 iu = bitwise_cast<uiA0>(uf);
         iu += 0x3f800000 - 0x3f3504f3;
         k = bitwise_cast<iA0>(iu>>23) - 0x7f;
-//        std::cout << x << " -> inner k " << k << std::endl;
-
-
         /* correction term ~ log(1+x)-log(u), avoid underflow in c/u */
-        if (k < 25) {
+        if (k < 25)
+        {
           c = k >= 2 ? oneminus(uf-x) : x-dec(uf);
           c /= uf;
-        } else
-          c = Zero<A0>();
+        }
 
         /* reduce u into [sqrt(2)/2, sqrt(2)] */
         iu = (iu&0x007fffff) + 0x3f3504f3;
         f =  dec(bitwise_cast<A0>(iu));
       }
-//      std::cout << "k " << k << std::endl;
       A0 s = f/(2.0f + f);
       A0 z = sqr(s);
       A0 w = sqr(z);
-      A0 t1= w*fma(w, Lg4, Lg2); //w*(Lg2+w*Lg4);
-      A0 t2= z*fma(w, Lg3, Lg1); //z*(Lg1+w*Lg3);
+      A0 t1= w*horn<A0, 0x3eccce13, 0x3e789e26>(w);
+      A0 t2= z*horn<A0, 0x3f2aaaaa, 0x3e91e9ee>(w);
       A0 R = t2 + t1;
       A0 hfsq = 0.5f*sqr(f);
       A0 dk = k;
-      return fma(s, hfsq+R,  fma(dk, ln2_lo, c) - hfsq + f + dk*ln2_hi);
+      return  fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()+c) - hfsq) + f));
     }
   };
 
@@ -141,54 +129,43 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      const A0
-        ln2_hi = 6.93147180369123816490e-01,  /* 3fe62e42 fee00000 */
-        ln2_lo = 1.90821492927058770002e-10,  /* 3dea39ef 35793c76 */
-        Lg1 = 6.666666666666735130e-01,  /* 3FE55555 55555593 */
-        Lg2 = 3.999999999940941908e-01,  /* 3FD99999 9997FA04 */
-        Lg3 = 2.857142874366239149e-01,  /* 3FD24924 94229359 */
-        Lg4 = 2.222219843214978396e-01,  /* 3FCC71C5 1D8E78AF */
-        Lg5 = 1.818357216161805012e-01,  /* 3FC74664 96CB03DE */
-        Lg6 = 1.531383769920937332e-01,  /* 3FC39A09 D078C69F */
-        Lg7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       uiA0 hx = bitwise_cast<uiA0>(x) >> 32;
       iA0 k = 1;
 
       A0 c = Zero<A0>(), f = x;
-      if (hx < 0x3fda827a || hx>>31) {  /* 1+x < sqrt(2)+ */
-        if (hx >= 0xbff00000) {  /* x <= -1.0 */
-          if (x == Mone<A0>())
-            return Minf<A0>();  /* log1p(-1)=-inf */
-          return Nan<A0>();     /* log1p(x<-1)=NaN */
+      if (hx < 0x3fda827a || hx>>31)               /* 1+x < sqrt(2)+ */
+      {
+        if (hx >= 0xbff00000)                      /* x <= -1.0 */
+        {
+          if (x == Mone<A0>()) return Minf<A0>();  /* log1p(-1)=-inf */
+          return Nan<A0>();                        /* log1p(x<-1)=NaN */
         }
-        if (hx<<1 < 0x3ca00000<<1) {  /* |x| < 2**-53 */
-          /* underflow if subnormal */
+        if (hx<<1 < 0x3ca00000<<1)                 /* |x| < 2**-53 */
+        {
           if ((hx&0x7ff00000) == 0) return x;
         }
-        if (hx <= 0xbfd2bec4) {  /* sqrt(2)/2- <= 1+x < sqrt(2)+ */
+        if (hx <= 0xbfd2bec4)                      /* sqrt(2)/2- <= 1+x < sqrt(2)+ */
+        {
           k = 0;
-          //      c = 0;
-          //      f = x;
         }
-      } else if (hx >= 0x7ff00000)
-        return x;
-      if (k) {
+      } else if (hx >= 0x7ff00000) return x;
+      if (k)
+      {
+        /* reduce x into [sqrt(2)/2, sqrt(2)] */
         A0 uf =  inc(x);
         uiA0 hu = bitwise_cast<uiA0>(uf)>>32;
         hu += 0x3ff00000 - 0x3fe6a09e;
         k = (int)(hu>>20) - 0x3ff;
         /* correction term ~ log(1+x)-log(u), avoid underflow in c/u */
-        if (k < 54) {
+        if (k < 54)
+        {
           c = k >= 2 ? oneminus(uf-x) : x-dec(uf);
           c /= uf;
-        } else
-          c = 0;
-
-        /* reduce x into [sqrt(2)/2, sqrt(2)] */
-        hu = (hu&0x000fffff) + 0x3fe6a09e;
-        f = bitwise_cast<A0>( (uint64_t)hu<<32 | (bitwise_and(0xffffffffull, bitwise_cast<uiA0>(f))));
+        }
+        hu =  (hu&0x000fffff) + 0x3fe6a09e;
+        f = bitwise_cast<A0>( bitwise_cast<uiA0>(hu<<32) | (bitwise_and(0xffffffffull, bitwise_cast<uiA0>(f))));
         f = dec(f);
       }
 
@@ -196,11 +173,26 @@ namespace boost { namespace simd { namespace ext
       A0 s = f/(2.0f + f);
       A0 z = sqr(s);
       A0 w = sqr(z);
-      A0 t1 = w*fma(w, fma(w, Lg6, Lg4), Lg2);
-      A0 t2 = z*fma(w, fma(w, fma(w, Lg7, Lg5), Lg3), Lg1);
+      A0 t1= w*horn<A0, 0x3fd999999997fa04ll, 0x3fcc71c51d8e78afll, 0x3fc39a09d078c69fll > (w);
+      A0 t2= z*horn<A0, 0x3fe5555555555593ll, 0x3fd2492494229359ll
+                      , 0x3fc7466496cb03dell, 0x3fc2f112df3e5244ll> (w);
       A0 R = t2 + t1;
       A0 dk = k;
-      return fma(s, (hfsq+R), fma(dk, ln2_lo, c) - hfsq + f + dk*ln2_hi);
+      return  fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()+c) - hfsq) + f));
+    }
+  };
+
+    BOOST_DISPATCH_OVERLOAD ( log1p_
+                          , (typename A0)
+                          , bd::cpu_
+                          , bs::regular_tag
+                          , bd::scalar_< bd::floating_<A0> >
+                          )
+  {
+    BOOST_FORCEINLINE A0 operator() (const regular_tag &, A0 x) const BOOST_NOEXCEPT
+    {
+      return musl_(log1p)(x); //the "regular" version of the algorithm is never speedier than the "musl" version.
+      // the call is here to allow a scalar fallback to simd calls
     }
   };
 

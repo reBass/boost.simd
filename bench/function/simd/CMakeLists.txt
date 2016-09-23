@@ -205,6 +205,7 @@ set(SOURCES
     log10.regular.cpp
     log1p.cpp
     log1p.musl.cpp
+    log1p.regular.cpp
     log2.cpp
     log2.musl.cpp
     log2.regular.cpp
