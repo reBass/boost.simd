@@ -12,43 +12,65 @@
 #define BOOST_SIMD_ARCH_COMMON_SIMD_FUNCTION_LOG1P_HPP_INCLUDED
 #include <boost/simd/detail/overload.hpp>
 
-#include <boost/simd/meta/hierarchy/simd.hpp>
-#include <boost/simd/function/is_nez.hpp>
-#include <boost/simd/function/log.hpp>
-#include <boost/simd/function/dec.hpp>
-#include <boost/simd/function/inc.hpp>
-#include <boost/simd/function/if_plus.hpp>
-#include <boost/simd/function/if_zero_else.hpp>
-#include <boost/simd/function/is_lez.hpp>
-#include <boost/simd/function/negif.hpp>
+#include <boost/simd/detail/dispatch/function/overload.hpp>
+#include <boost/config.hpp>
 
-#ifndef BOOST_SIMD_NO_INFINITIES
-#include <boost/simd/constant/inf.hpp>
+#include <boost/simd/function/any.hpp>
+#include <boost/simd/function/bitwise_cast.hpp>
+#include <boost/simd/function/dec.hpp>
+#include <boost/simd/function/fma.hpp>
+#include <boost/simd/function/frexp.hpp>
+#include <boost/simd/function/genmask.hpp>
+#include <boost/simd/function/horn.hpp>
 #include <boost/simd/function/if_else.hpp>
-#include <boost/simd/function/is_equal.hpp>
-#endif
+#include <boost/simd/function/if_minus.hpp>
+#include <boost/simd/function/if_nan_else.hpp>
+#include <boost/simd/function/inc.hpp>
+#include <boost/simd/function/is_ltz.hpp>
+#include <boost/simd/function/is_nez.hpp>
+#include <boost/simd/function/musl.hpp>
+#include <boost/simd/function/regular.hpp>
+#include <boost/simd/function/sqr.hpp>
+#include <boost/simd/function/tofloat.hpp>
+
+#include <boost/simd/constant/half.hpp>
+#include <boost/simd/constant/inf.hpp>
+#include <boost/simd/constant/minf.hpp>
+#include <boost/simd/constant/sqrt_2o_2.hpp>
+#include <boost/simd/constant/two.hpp>
+
+#include <boost/simd/detail/constant/log_2hi.hpp>
+#include <boost/simd/detail/constant/log_2lo.hpp>
+
+#include <boost/simd/detail/dispatch/meta/as_integer.hpp>
 
 namespace boost { namespace simd { namespace ext
 {
   namespace bd = boost::dispatch;
 
-  BOOST_DISPATCH_OVERLOAD_IF ( log1p_
+ BOOST_DISPATCH_OVERLOAD_IF ( log1p_
                              , (typename A0, typename X)
                              , (detail::is_native<X>)
                              , bd::cpu_
-                             , bs::pack_< bd::floating_<A0>, X>
+                             , bs::pack_< bd::single_<A0>, X>
                           )
   {
     BOOST_FORCEINLINE A0 operator()( const A0& a0) BOOST_NOEXCEPT
     {
-      A0 u = inc(a0);
-      A0 r = if_plus(is_nez(u),
-                    log(u),
-                    (a0-dec(u))/u); // cancels errors with IEEE arithmetic
-#ifndef BOOST_SIMD_NO_INFINITIES
-      r = if_else(is_equal(u, Inf<A0>()),u, r);
-#endif
-      return r;
+      return musl_(log1p)(a0);
+    }
+  };
+
+ BOOST_DISPATCH_OVERLOAD_IF ( log1p_
+                             , (typename A0, typename X)
+                             , (detail::is_native<X>)
+                             , bd::cpu_
+                             , bs::pack_< bd::double_<A0>, X>
+                          )
+  {
+    BOOST_FORCEINLINE A0 operator()( const A0& a0) BOOST_NOEXCEPT
+    {
+      return regular_(log1p)(a0);
     }
   };
 
@@ -71,7 +93,6 @@ namespace boost { namespace simd { namespace ext
       iu += 0x3f800000 - 0x3f3504f3;
       iA0 k = bitwise_cast<iA0>(iu>>23) - 0x7f;
       /* correction term ~ log(1+x)-log(u), avoid underflow in c/u */
-      A0  c = if_else( k >= 2, oneminus(uf-a0), a0-dec(uf))/uf;
       /* reduce x into [sqrt(2)/2, sqrt(2)] */
       iu = (iu&0x007fffff) + 0x3f3504f3;
       A0 f =  dec(bitwise_cast<A0>(iu));
@@ -83,6 +104,7 @@ namespace boost { namespace simd { namespace ext
       A0 R = t2 + t1;
       A0 hfsq = Half<A0>()*sqr(f);
       A0 dk = tofloat(k);
+      A0  c = if_else( k >= 2, oneminus(uf-a0), a0-dec(uf))/uf;
       A0 r = fma(dk, Log_2hi<A0>(), ((fma(s, (hfsq+R), dk*Log_2lo<A0>()+c) - hfsq) + f));
 #ifndef BOOST_SIMD_NO_INFINITIES
       A0 zz = if_else(isnez, if_else(a0 == Inf<A0>(), Inf<A0>(), r), Minf<A0>());
@@ -113,7 +135,7 @@ namespace boost { namespace simd { namespace ext
       hu += 0x3ff00000 - 0x3fe6a09e;
       iA0 k = bitwise_cast<iA0>(hu>>20) - 0x3ff;
       /* correction term ~ log(1+x)-log(u), avoid underflow in c/u */
-      A0  c = if_else( k >= 2, oneminus(uf-a0), a0-dec(uf))/uf;
+      A0  c =  if_else( k >= 2, oneminus(uf-a0), a0-dec(uf))/uf;
       hu =  (hu&0x000fffff) + 0x3fe6a09e;
       A0 f = bitwise_cast<A0>( bitwise_cast<uiA0>(hu<<32) | (bitwise_and(0xffffffffull, bitwise_cast<uiA0>(f))));
       f = dec(f);

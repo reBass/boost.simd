@@ -35,15 +35,16 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() ( A0 const& a0) const BOOST_NOEXCEPT
     {
-      detail::enforce_precision<A0> enforcer;
+      return musl_(log1p)(a0);
+ //      detail::enforce_precision<A0> enforcer;
 
-      if (Mone<A0>() > a0)   return Nan<A0>();
-      #ifndef BOOST_SIMD_NO_INFINITIES
-      if (a0 == Inf<A0>())   return Inf<A0>();
-      #endif
-      if (a0 == Mone<A0>())   return Minf<A0>();
-      A0 u = inc(a0);
-      return log(u)+(a0-dec(u))/u;
+//       if (Mone<A0>() > a0)   return Nan<A0>();
+//       #ifndef BOOST_SIMD_NO_INFINITIES
+//       if (a0 == Inf<A0>())   return Inf<A0>();
+//       #endif
+//       if (a0 == Mone<A0>())   return Minf<A0>();
+//       A0 u = inc(a0);
+//       return log(u)+(a0-dec(u))/u;
     }
   };
   BOOST_DISPATCH_OVERLOAD ( log1p_
