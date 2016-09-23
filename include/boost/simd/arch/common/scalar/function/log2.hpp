@@ -160,13 +160,10 @@ namespace boost { namespace simd { namespace ext
       // a 0.5 ulp maximal error on the full range.
       // Moreover all log2(exp2(i)) i =  1..31 are flint
       // I leave the code here in case an exotic proc will not play the game.
-      //      const A0
-      //         ivln2hi =  1.4428710938e+00, // 0x3fb8b000
-      //         ivln2lo = -1.7605285393e-04, // 0xb9389ad4
       //       A0  hi = f - hfsq;
       //       hi =  bitwise_and(hi, uiA0(0xfffff000ul));
       //       A0  lo = fma(s, hfsq+R, f - hi - hfsq);
-      //       return fma((lo+hi), ivln2lo, lo*ivln2hi + hi*ivln2hi + k);
+      //       return fma((lo+hi), Invlog_2lo<A0>(), lo*Invlog_2hi<A0>() + hi*Invlog_2hi<A0>() + k);
     }
   };
 
@@ -190,9 +187,6 @@ namespace boost { namespace simd { namespace ext
      */
     BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-//       const A0
-//         ivln2hi = 1.44269504072144627571e+00, /* 0x3ff71547, 0x65200000 */
-//         ivln2lo = 1.67517131648865118353e-10; /* 0x3de705fc, 0x2eefa200 */
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       uiA0 hx = bitwise_cast<uiA0>(x) >> 32;

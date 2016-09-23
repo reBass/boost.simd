@@ -44,7 +44,7 @@ namespace boost { namespace simd
     struct log10_2lo_ : boost::dispatch::constant_value_<log10_2lo_>
     {
       BOOST_DISPATCH_MAKE_CALLABLE(ext,log10_2lo_,boost::dispatch::constant_value_<log10_2lo_>);
-      BOOST_SIMD_REGISTER_CONSTANT(0, 0x39826a14UL, 0x3ed3509f79fef312ULL);
+      BOOST_SIMD_REGISTER_CONSTANT(0, 0x355427dbUL, 0x3D59FEF311F12B36ULL);
     };
   }
 

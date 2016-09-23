@@ -23,6 +23,10 @@
 #include <boost/simd/constant/invlog_10.hpp>
 #include <boost/simd/function/nearbyint.hpp>
 #include <boost/simd/function/is_flint.hpp>
+#include <boost/simd/detail/constant/invlog_10hi.hpp>
+#include <boost/simd/detail/constant/invlog_10lo.hpp>
+#include <boost/simd/detail/constant/log10_2hi.hpp>
+#include <boost/simd/detail/constant/log10_2lo.hpp>
 
 namespace boost { namespace simd { namespace ext
 {
@@ -138,7 +142,7 @@ namespace boost { namespace simd { namespace ext
   {
     BOOST_FORCEINLINE A0 operator() ( A0 a0) const BOOST_NOEXCEPT
     {
-      return musl_(log10)(a0); //detail::logarithm<A0,tag::not_simd_type>::log10(a0);
+      return musl_(log10)(a0);
     }
   };
 
@@ -176,11 +180,11 @@ namespace boost { namespace simd { namespace ext
    */
     BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      const A0
-        ivln10hi  =  4.3432617188e-01, /* 0x3ede6000 */
-        ivln10lo  = -3.1689971365e-05, /* 0xb804ead9 */
-        log10_2hi =  3.0102920532e-01, /* 0x3e9a2080 */
-        log10_2lo =  7.9034151668e-07; /* 0x355427db */
+//       const A0
+//         Invlog_10hi<A0>()  =  4.3432617188e-01, /* 0x3ede6000 */
+//         Invlog_10lo<A0>()  = -3.1689971365e-05, /* 0xb804ead9 */
+//         Log10_2hi<A0>() =  3.0102920532e-01, /* 0x3e9a2080 */
+//         Log10_2lo<A0> =  7.9034151668e-07; /* 0x355427db */
         using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       uiA0 ix = bitwise_cast<uiA0>(x);
@@ -223,11 +227,11 @@ namespace boost { namespace simd { namespace ext
       hi =  bitwise_and(hi, uiA0(0xfffff000ul));
       A0  lo = fma(s, hfsq+R, f - hi - hfsq);
       A0 dk = k;
-//      return ((((dk*log10_2lo + (lo+hi)*ivln10lo) + lo*ivln10hi) + hi*ivln10hi) + dk*log10_2hi);
-      return fma(dk, log10_2hi,
-                 fma(hi, ivln10hi,
-                     (fma(lo, ivln10hi,
-                          fma(lo+hi, ivln10lo, dk*log10_2lo)
+//      return ((((dk*Log10_2lo<A0> + (lo+hi)*Invlog_10lo<A0>()) + lo*Invlog_10hi<A0>()) + hi*Invlog_10hi<A0>()) + dk*Log10_2hi<A0>());
+      return fma(dk, Log10_2hi<A0>(),
+                 fma(hi, Invlog_10hi<A0>(),
+                     (fma(lo, Invlog_10hi<A0>(),
+                          fma(lo+hi, Invlog_10lo<A0>(), dk*Log10_2lo<A0>())
                          )
                      )
                     )
@@ -255,11 +259,11 @@ namespace boost { namespace simd { namespace ext
      */
     BOOST_FORCEINLINE A0 operator() (const musl_tag &, A0 x) const BOOST_NOEXCEPT
     {
-      const A0
-        ivln10hi  = 4.34294481878168880939e-01, /* 0x3fdbcb7b, 0x15200000 */
-        ivln10lo  = 2.50829467116452752298e-11, /* 0x3dbb9438, 0xca9aadd5 */
-        log10_2hi = 3.01029995663611771306e-01, /* 0x3FD34413, 0x509F6000 */
-        log10_2lo = 3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
+//       const A0
+//         Invlog_10hi<A0>()  = 4.34294481878168880939e-01, /* 0x3fdbcb7b, 0x15200000 */
+//         Invlog_10lo<A0>()  = 2.50829467116452752298e-11, /* 0x3dbb9438, 0xca9aadd5 */
+//         Log10_2hi<A0>() = 3.01029995663611771306e-01, /* 0x3FD34413, 0x509F6000 */
+//         Log10_2lo<A0> = 3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
       using uiA0 = bd::as_integer_t<A0, unsigned>;
       using iA0 = bd::as_integer_t<A0,   signed>;
       uiA0 hx = bitwise_cast<uiA0>(x) >> 32;
@@ -305,9 +309,9 @@ namespace boost { namespace simd { namespace ext
       A0 lo = f - hi - hfsq + s*(hfsq+R);
 
       /* val_hi+val_lo ~ log10(1+f) + k*log10(2) */
-      A0 val_hi = hi*ivln10hi;
-      A0 y = dk*log10_2hi;
-      A0 val_lo = fma(dk, log10_2lo,  fma(lo+hi, ivln10lo,  lo*ivln10hi));
+      A0 val_hi = hi*Invlog_10hi<A0>();
+      A0 y = dk*Log10_2hi<A0>();
+      A0 val_lo = fma(dk, Log10_2lo<A0>(),  fma(lo+hi, Invlog_10lo<A0>(),  lo*Invlog_10hi<A0>()));
 
 //       /*
 //        * Extra precision in for adding y is not strictly needed
