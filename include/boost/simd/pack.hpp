@@ -196,6 +196,16 @@ namespace boost { namespace simd
                       : data_( boost::simd::splat<pack>(value).storage() )
     {}
 
+    /// @brief Scalar assignment operator
+    template < typename U
+             , typename = typename std::enable_if<std::is_convertible<U, value_type>::value>::type
+             >
+    BOOST_FORCEINLINE pack& operator=(U const& value) BOOST_NOEXCEPT
+    {
+      data_ = boost::simd::splat<pack>(value_type(value)).storage();
+      return *this;
+    }
+
     /// @brief Pack assignment operator
     BOOST_FORCEINLINE pack& operator=(pack const& rhs) BOOST_NOEXCEPT
     {
