@@ -84,6 +84,7 @@ set(SOURCES
     ctz.cpp
     dec.cpp
     dec_s.cpp
+    deinterleave.cpp
     deinterleave_first.cpp
     deinterleave_second.cpp
     dist.cpp
@@ -148,6 +149,7 @@ set(SOURCES
     inc_s.cpp
     indeg.cpp
     inrad.cpp
+    interleave.cpp
     interleave_even.cpp
     interleave_first.cpp
     interleave_odd.cpp
